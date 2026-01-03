@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@theme {
+  /* Accent color - sky blue */
+  --color-accent-50: #f0f9ff;
+  --color-accent-100: #e0f2fe;
+  --color-accent-200: #bae6fd;
+  --color-accent-300: #7dd3fc;
+  --color-accent-400: #38bdf8;
+  --color-accent-500: #0ea5e9;
+  --color-accent-600: #0284c7;
+  --color-accent-700: #0369a1;
+  --color-accent-800: #075985;
+  --color-accent-900: #0c4a6e;
+
+  /* Responsive typography - scales with viewport */
+  --font-size-display: clamp(3rem, 15vmin, 6rem);
+  --font-size-heading: clamp(1.5rem, 5vmin, 1.875rem);
+  --font-size-subheading: clamp(1rem, 3vmin, 1.25rem);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply antialiased;
+  }
+
+  /* High contrast mode - automatic via media query */
+  @media (prefers-contrast: more) {
+    :root {
+      --focus-ring-width: 3px;
+      --focus-ring-offset: 3px;
+    }
+
+    /* Disable decorative animations for clarity */
+    .animate-pulse {
+      animation: none;
+    }
+
+    /* Increase contrast for muted text */
+    .text-neutral-400,
+    .text-neutral-500 {
+      color: var(--color-neutral-600);
+    }
+  }
+
+  @media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+    .text-neutral-400,
+    .text-neutral-500 {
+      color: var(--color-neutral-300);
+    }
+  }
+}
+
+@layer utilities {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Landscape-aware minimum height for interaction areas */
+  .min-h-interaction {
+    min-height: 200px;
+  }
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    .min-h-interaction {
+      min-height: 120px;
+    }
+  }
+
+  /* Safe padding that reduces in landscape */
+  .p-safe {
+    padding: 1rem;
+  }
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    .p-safe {
+      padding: 0.5rem;
+    }
+  }
+
+  /* Enhanced focus indicator for interactive elements */
+  .focus-interactive {
+    outline: none;
+  }
+
+  .focus-interactive:focus-visible {
+    outline: 2px solid var(--color-accent-500);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-contrast: more) {
+    .focus-interactive:focus-visible {
+      outline-width: 3px;
+      outline-offset: 3px;
+    }
+  }
+
+  /* Warning state - not color-only (uses underline + bold) */
+  .warning-state {
+    color: var(--color-red-500);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-underline-offset: 4px;
+  }
+
+  @media (prefers-contrast: more) {
+    .warning-state {
+      background-color: var(--color-red-100);
+      padding-inline: 0.5rem;
+      padding-block: 0.25rem;
+      border-radius: 0.25rem;
+    }
+  }
+
+  @media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+    .warning-state {
+      background-color: var(--color-red-900);
+    }
+  }
+
+  /* Screen reader only - visually hidden but accessible */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}

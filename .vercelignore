@@ -1,0 +1,9 @@
+e2e/
+playwright-report/
+test-results/
+blob/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+node_modules/

@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 5 npm run dev:*)",
+      "Bash(tree:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(wc:*)",
+      "Bash(xargs:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run build)",
+      "Bash(bun test:*)",
+      "Bash(bun add:*)",
+      "Bash(bunx playwright install:*)",
+      "Bash(bun run test:e2e:chromium:*)"
+    ]
+  }
+}
