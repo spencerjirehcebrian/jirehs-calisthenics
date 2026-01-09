@@ -11,16 +11,16 @@ test.describe('Hold to Skip Interactions', () => {
     activeWorkoutPage = new ActiveWorkoutPage(page);
   });
 
-  test('should display hold to skip button', async ({ page }) => {
+  test('should display hold to skip button', async () => {
     await expect(activeWorkoutPage.holdToSkipButton).toBeVisible();
   });
 
-  test('should show initial "Hold to skip" label', async ({ page }) => {
+  test('should show initial "Hold to skip" label', async () => {
     const label = await activeWorkoutPage.holdToSkipButton.getAttribute('aria-label');
     expect(label).toContain('Hold for');
   });
 
-  test('should show progress during hold', async ({ page }) => {
+  test('should show progress during hold', async () => {
     const holdButton = activeWorkoutPage.holdToSkipButton;
 
     // Wait for button to be visible

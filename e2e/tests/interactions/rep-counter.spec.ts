@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { ActiveWorkoutPage } from '../../page-objects/active-workout.page';
 import { navigateToActiveWorkout } from '../../helpers/navigation-helpers';
-import { selectors } from '../../helpers/selectors';
 
 test.describe('Rep Counter Interactions', () => {
   let activeWorkoutPage: ActiveWorkoutPage;
@@ -11,12 +10,12 @@ test.describe('Rep Counter Interactions', () => {
     activeWorkoutPage = new ActiveWorkoutPage(page);
   });
 
-  test('should display rep counter for rep-based exercises', async ({ page }) => {
+  test('should display rep counter for rep-based exercises', async () => {
     // First exercise in Workout A is Push-ups (rep-based)
     await expect(activeWorkoutPage.repCounter).toBeVisible();
   });
 
-  test('should increment rep count on click', async ({ page }) => {
+  test('should increment rep count on click', async () => {
     const initialReps = await activeWorkoutPage.getCurrentReps();
     expect(initialReps).toBe(0);
 
@@ -45,12 +44,12 @@ test.describe('Rep Counter Interactions', () => {
     await expect(targetText.first()).toBeVisible();
   });
 
-  test('should count multiple rapid taps correctly', async ({ page }) => {
+  test('should count multiple rapid taps correctly', async () => {
     await activeWorkoutPage.tapRepCounterTimes(10);
     expect(await activeWorkoutPage.getCurrentReps()).toBe(10);
   });
 
-  test('should have correct aria-label for accessibility', async ({ page }) => {
+  test('should have correct aria-label for accessibility', async () => {
     await activeWorkoutPage.tapRepCounterTimes(5);
 
     const label = await activeWorkoutPage.repCounter.getAttribute('aria-label');
@@ -58,7 +57,7 @@ test.describe('Rep Counter Interactions', () => {
     expect(label).toContain('Tap or press Enter');
   });
 
-  test('should show Done button after counting reps', async ({ page }) => {
+  test('should show Done button after counting reps', async () => {
     await activeWorkoutPage.tapRepCounterTimes(3);
     await expect(activeWorkoutPage.doneStartRestButton).toBeVisible();
   });

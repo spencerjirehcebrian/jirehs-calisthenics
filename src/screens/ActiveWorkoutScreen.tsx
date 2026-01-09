@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Button, ConfirmDialog } from '@/components/base'
 import { Timer } from '@/components/base/Timer'
 import { ActionBar } from '@/components/layout/ActionBar'
 import { RepCounter, TimedHold, RestTimer, TapToSkipOverlay } from '@/components/interactions'
-import { useNavigationStore, useWorkoutSessionStore, useSettingsStore } from '@/stores'
-import { useElapsedTime, useAudioCue, useKeepAlive } from '@/hooks'
+import { VoiceSetupModal } from '@/components/voice'
+import { useNavigationStore, useWorkoutSessionStore, useSettingsStore, useVoiceStore } from '@/stores'
+import { useElapsedTime, useAudioCue, useKeepAlive, useVoiceCommands } from '@/hooks'
 import { getWorkoutById } from '@/data/workouts'
 import { getExerciseById } from '@/data/exercises'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -36,6 +37,13 @@ export function ActiveWorkoutScreen() {
   } = useWorkoutSessionStore()
   const deloadMode = useSettingsStore((state) => state.deloadMode)
   const holdCountdown = useSettingsStore((state) => state.holdCountdown)
+
+  // Voice control state
+  const { showSetupModal, isSupported: voiceSupported } = useVoiceStore()
+  const [showVoiceSetup, setShowVoiceSetup] = useState(showSetupModal && voiceSupported)
+  const [holdTriggerStart, setHoldTriggerStart] = useState(false)
+  const [holdTriggerStop, setHoldTriggerStop] = useState(false)
+  const [restExtendTrigger, setRestExtendTrigger] = useState(false)
 
   const [activeTab, setActiveTab] = useState<InfoTab>('form')
   const [showExitDialog, setShowExitDialog] = useState(false)
@@ -118,6 +126,68 @@ export function ActiveWorkoutScreen() {
     navigate('home')
   }
 
+  // Voice command handlers
+  const handleVoiceNumber = useCallback((n: number) => {
+    // Set rep count to absolute value
+    useWorkoutSessionStore.setState({ currentReps: n })
+  }, [])
+
+  const handleVoiceUndo = useCallback(() => {
+    const current = useWorkoutSessionStore.getState().currentReps
+    if (current > 0) {
+      useWorkoutSessionStore.setState({ currentReps: current - 1 })
+    }
+  }, [])
+
+  const handleVoiceReady = useCallback(() => {
+    // Trigger timed hold start
+    setHoldTriggerStart(true)
+    setTimeout(() => setHoldTriggerStart(false), 100)
+  }, [])
+
+  const handleVoiceStop = useCallback(() => {
+    // Trigger timed hold stop
+    setHoldTriggerStop(true)
+    setTimeout(() => setHoldTriggerStop(false), 100)
+  }, [])
+
+  const handleVoiceExtend = useCallback(() => {
+    // Trigger rest extension
+    setRestExtendTrigger(true)
+    setTimeout(() => setRestExtendTrigger(false), 100)
+  }, [])
+
+  // Voice commands for reps mode
+  useVoiceCommands({
+    context: 'repCounter',
+    handlers: {
+      onNumber: handleVoiceNumber,
+      onDone: handleExerciseComplete,
+      onUndo: handleVoiceUndo
+    },
+    enabled: !isResting && exercise?.type === 'reps'
+  })
+
+  // Voice commands for timed hold mode
+  useVoiceCommands({
+    context: 'timedHold',
+    handlers: {
+      onReady: handleVoiceReady,
+      onStop: handleVoiceStop
+    },
+    enabled: !isResting && exercise?.type !== 'reps'
+  })
+
+  // Voice commands for rest mode
+  useVoiceCommands({
+    context: 'rest',
+    handlers: {
+      onSkip: handleRestComplete,
+      onExtend: handleVoiceExtend
+    },
+    enabled: isResting
+  })
+
   if (!workout || !exercise) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 bg-cream-100 dark:bg-ink-950">
@@ -168,6 +238,7 @@ export function ActiveWorkoutScreen() {
           initialSeconds={90}
           onComplete={handleRestComplete}
           nextExerciseName={nextExercise?.name}
+          externalExtend={restExtendTrigger}
         />
 
         {/* Bottom bar */}
@@ -283,6 +354,8 @@ export function ActiveWorkoutScreen() {
                 targetSeconds={currentWorkoutExercise?.targetDurationSeconds ?? 30}
                 countdownDuration={holdCountdown}
                 onComplete={handleExerciseComplete}
+                externalTriggerStart={holdTriggerStart}
+                externalTriggerStop={holdTriggerStop}
               />
             </motion.div>
           )}
@@ -368,6 +441,11 @@ export function ActiveWorkoutScreen() {
         cancelLabel="Continue"
         onConfirm={confirmExit}
         onCancel={() => setShowExitDialog(false)}
+      />
+
+      <VoiceSetupModal
+        isOpen={showVoiceSetup}
+        onContinue={() => setShowVoiceSetup(false)}
       />
       </motion.div>
     </TapToSkipOverlay>

@@ -16,7 +16,7 @@ test.describe('Rest Timer Interactions', () => {
     await activeWorkoutPage.doneStartRestButton.click();
   });
 
-  test('should show rest timer after completing exercise', async ({ page }) => {
+  test('should show rest timer after completing exercise', async () => {
     await expect(activeWorkoutPage.restLabel).toBeVisible();
   });
 
@@ -32,7 +32,7 @@ test.describe('Rest Timer Interactions', () => {
     await expect(nextExercise.first()).toBeVisible();
   });
 
-  test('should allow tap to continue from rest', async ({ page }) => {
+  test('should allow tap to continue from rest', async () => {
     // Tap to continue area should be available
     await expect(activeWorkoutPage.tapToContinueArea).toBeVisible();
 
@@ -64,7 +64,7 @@ test.describe('Rest Timer Interactions', () => {
     await expect(holdButton).toBeVisible();
   });
 
-  test('should show accessible label for rest area', async ({ page }) => {
+  test('should show accessible label for rest area', async () => {
     const label = await activeWorkoutPage.tapToContinueArea.getAttribute('aria-label');
     expect(label).toContain('continue');
   });

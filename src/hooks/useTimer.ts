@@ -91,12 +91,14 @@ export function useTimer({
     return clearTimerInterval
   }, [isRunning, direction, clearTimerInterval])
 
-  // Auto-start on mount if requested
+  // Auto-start effect - handles autoStart prop changes after initial mount
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (autoStart) {
+    if (autoStart && !isRunning) {
       setIsRunning(true)
     }
-  }, [autoStart])
+  }, [autoStart, isRunning])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return {
     seconds,

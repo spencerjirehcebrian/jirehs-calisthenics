@@ -46,6 +46,10 @@ export function useHoldDetection({
     onHoldCancelRef.current = onHoldCancel
   }, [onHoldComplete, onHoldStart, onHoldCancel])
 
+  // updateProgress needs to be declared before cancelHold to avoid "accessed before declaration" error
+  // Using a ref to store the function allows mutual recursion between updateProgress and cancelHold
+  const updateProgressRef = useRef<() => void>(() => {})
+
   const cancelHold = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
@@ -75,9 +79,14 @@ export function useHoldDetection({
       onHoldCompleteRef.current()
       cancelHold()
     } else {
-      animationFrameRef.current = requestAnimationFrame(updateProgress)
+      animationFrameRef.current = requestAnimationFrame(updateProgressRef.current)
     }
   }, [holdDuration, cancelHold])
+
+  // Keep the ref updated
+  useEffect(() => {
+    updateProgressRef.current = updateProgress
+  }, [updateProgress])
 
   const startHold = useCallback(() => {
     if (isHolding) return
@@ -105,13 +114,13 @@ export function useHoldDetection({
       e.preventDefault()
       startHold()
     },
-    onPointerUp: (_e: React.PointerEvent) => {
+    onPointerUp: () => {
       cancelHold()
     },
-    onPointerLeave: (_e: React.PointerEvent) => {
+    onPointerLeave: () => {
       cancelHold()
     },
-    onPointerCancel: (_e: React.PointerEvent) => {
+    onPointerCancel: () => {
       cancelHold()
     },
     onKeyDown: (e: React.KeyboardEvent) => {

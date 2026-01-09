@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button, ConfirmDialog } from '@/components/base'
 import { Timer } from '@/components/base/Timer'
 import { GuidedMovementStep } from '@/components/interactions'
 import { useNavigationStore, useWorkoutSessionStore } from '@/stores'
-import { useElapsedTime, useKeepAlive } from '@/hooks'
+import { useElapsedTime, useKeepAlive, useVoiceCommands } from '@/hooks'
 import { cooldownStretches } from '@/data/cooldown'
 import { normalizeCooldownStretch } from '@/utils'
 import { motion } from 'framer-motion'
@@ -17,6 +17,9 @@ export function CooldownScreen() {
   const [currentSide, setCurrentSide] = useState<'first' | 'second' | null>(null)
   const [currentReps, setCurrentReps] = useState(0)
   const [showExitDialog, setShowExitDialog] = useState(false)
+
+  // Voice control state
+  const [holdTriggerStart, setHoldTriggerStart] = useState(false)
 
   const sessionElapsed = useElapsedTime(startTime)
 
@@ -44,6 +47,8 @@ export function CooldownScreen() {
     return completed
   }, [normalizedStretches, stretchIndex, currentSide, currentStretch?.sideHandling])
 
+  // Reset side and reps when stretch changes - intentional "reset on prop change" pattern
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (currentStretch?.sideHandling !== 'none') {
       setCurrentSide('first')
@@ -52,6 +57,7 @@ export function CooldownScreen() {
     }
     setCurrentReps(0)
   }, [stretchIndex, currentStretch?.sideHandling])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleStretchComplete = () => {
     if (currentStretch?.sideHandling === 'per-side' && currentSide === 'first') {
@@ -89,6 +95,28 @@ export function CooldownScreen() {
     endWorkout()
     navigate('session-summary')
   }
+
+  // Voice command handlers
+  const handleVoiceNumber = useCallback((n: number) => {
+    setCurrentReps(n)
+  }, [])
+
+  const handleVoiceReady = useCallback(() => {
+    setHoldTriggerStart(true)
+    setTimeout(() => setHoldTriggerStart(false), 100)
+  }, [])
+
+  // Voice commands for guided movements
+  useVoiceCommands({
+    context: 'guidedMovement',
+    handlers: {
+      onNumber: currentStretch?.mode === 'reps' ? handleVoiceNumber : undefined,
+      onDone: handleStretchComplete,
+      onSkip: handleSkipStretch,
+      onReady: currentStretch?.mode === 'timed' ? handleVoiceReady : undefined
+    },
+    enabled: true
+  })
 
   if (!currentStretch) {
     return (
@@ -136,6 +164,7 @@ export function CooldownScreen() {
           current: completedSteps + 1,
           total: totalSteps
         }}
+        externalTriggerStart={holdTriggerStart}
       />
 
       <ConfirmDialog

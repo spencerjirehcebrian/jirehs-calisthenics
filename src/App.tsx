@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react'
-import { useNavigationStore } from '@/stores'
+import { lazy, Suspense, useEffect } from 'react'
+import { useNavigationStore, useVoiceStore } from '@/stores'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Button } from '@/components/base/Button'
 import { ErrorBoundary } from '@/components/base/ErrorBoundary'
+import { VoiceMicIndicator } from '@/components/voice'
 import { routes } from '@/routes'
 import { useExitProtection } from '@/hooks'
 
@@ -103,12 +104,19 @@ function AppHeader() {
 function App() {
   const currentScreen = useNavigationStore((state) => state.currentScreen)
   const route = routes[currentScreen]
+  const checkVoiceSupport = useVoiceStore((state) => state.checkSupport)
 
   // Prevent accidental page exit during active workouts
   useExitProtection()
 
+  // Check voice support on mount
+  useEffect(() => {
+    checkVoiceSupport()
+  }, [checkVoiceSupport])
+
   return (
     <ErrorBoundary>
+      <VoiceMicIndicator />
       <AppLayout header={route.showHeader ? <AppHeader /> : undefined}>
         <AppRouter />
       </AppLayout>

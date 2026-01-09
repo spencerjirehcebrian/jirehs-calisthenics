@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Timer } from '@/components/base/Timer'
 import { ProgressRing } from '@/components/base/ProgressRing'
 import { TapToSkipOverlay } from './TapToSkipOverlay'
@@ -14,27 +14,35 @@ const REST_TIPS = [
   'Focus on your breathing'
 ]
 
+// Pick a random tip at module load time (pure)
+function getRandomTip(): string {
+  return REST_TIPS[Math.floor(Math.random() * REST_TIPS.length)]
+}
+
 interface RestTimerProps {
   initialSeconds?: number
   onComplete: () => void
   nextExerciseName?: string
   className?: string
+  /** External trigger to extend rest time by 30 seconds (for voice commands) */
+  externalExtend?: boolean
 }
 
 export function RestTimer({
   initialSeconds = 90,
   onComplete,
   nextExerciseName,
-  className = ''
+  className = '',
+  externalExtend
 }: RestTimerProps) {
   const { playRestWarning, playRestComplete } = useAudioCue()
   const hasPlayedWarning = useRef(false)
   const hasPlayedComplete = useRef(false)
+  const [extraSeconds, setExtraSeconds] = useState(0)
+  const lastExtendRef = useRef(externalExtend)
 
-  // Pick a random rest tip
-  const restTip = useMemo(() => {
-    return REST_TIPS[Math.floor(Math.random() * REST_TIPS.length)]
-  }, [])
+  // Pick a random rest tip once on mount (useState initializer runs only once)
+  const [restTip] = useState(getRandomTip)
 
   const timer = useTimer({
     initialSeconds,
@@ -54,10 +62,27 @@ export function RestTimer({
     }
   })
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     hasPlayedWarning.current = false
     hasPlayedComplete.current = false
+    setExtraSeconds(0)
   }, [initialSeconds])
+
+  // Handle external extend trigger (for voice commands)
+  useEffect(() => {
+    if (externalExtend && !lastExtendRef.current) {
+      // Add 30 seconds when trigger flips from false to true
+      setExtraSeconds((prev) => prev + 30)
+      // Reset the timer with the new total time
+      // Calculate how much time has passed and add 30 seconds to remaining
+      const remaining = timer.seconds
+      timer.reset(remaining + 30)
+      timer.start()
+    }
+    lastExtendRef.current = externalExtend
+  }, [externalExtend, timer])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleComplete = () => {
     timer.pause()
@@ -65,7 +90,8 @@ export function RestTimer({
   }
 
   // Calculate progress (1 = full, 0 = empty)
-  const progress = Math.max(0, timer.seconds / initialSeconds)
+  const totalSeconds = initialSeconds + extraSeconds
+  const progress = Math.max(0, timer.seconds / totalSeconds)
   const isWarning = timer.seconds <= 10 && timer.seconds > 0
   const isOvertime = timer.seconds < 0
 

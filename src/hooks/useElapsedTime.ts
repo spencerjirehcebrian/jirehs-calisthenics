@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 export function useElapsedTime(startTime: number | null): number {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!startTime) {
       setElapsedSeconds(0)
@@ -28,6 +29,7 @@ export function useElapsedTime(startTime: number | null): number {
 
     return () => clearInterval(interval)
   }, [startTime])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return elapsedSeconds
 }

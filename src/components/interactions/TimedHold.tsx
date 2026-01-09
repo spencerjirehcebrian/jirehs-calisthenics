@@ -13,6 +13,10 @@ interface TimedHoldProps {
   countdownDuration?: 2 | 3
   onComplete: () => void
   className?: string
+  /** External trigger to start the hold (for voice commands) */
+  externalTriggerStart?: boolean
+  /** External trigger to abort the hold (for voice commands) */
+  externalTriggerStop?: boolean
 }
 
 // Expanding rings component for active phase
@@ -49,7 +53,9 @@ export function TimedHold({
   targetSeconds,
   countdownDuration = 3,
   onComplete,
-  className = ''
+  className = '',
+  externalTriggerStart,
+  externalTriggerStop
 }: TimedHoldProps) {
   const [phase, setPhase] = useState<TimedHoldPhase>('ready')
   const { playHoldTick, playHoldComplete } = useAudioCue()
@@ -95,12 +101,35 @@ export function TimedHold({
     disabled: phase !== 'ready'
   })
 
+  // Reset when target/countdown changes - this is intentional "reset on prop change" pattern
+  // Timer refs are intentionally excluded from deps as they change every render
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     setPhase('ready')
     countdownTimer.reset(countdownDuration)
     holdTimer.reset(targetSeconds)
     hasPlayedComplete.current = false
   }, [targetSeconds, countdownDuration])
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+
+  // Handle external start trigger (for voice commands)
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (externalTriggerStart && phase === 'ready') {
+      handleTapToStart()
+    }
+  }, [externalTriggerStart, phase, handleTapToStart])
+
+  // Handle external stop trigger (for voice commands)
+  useEffect(() => {
+    if (externalTriggerStop && (phase === 'countdown' || phase === 'active')) {
+      // Abort the hold
+      setPhase('ready')
+      countdownTimer.reset(countdownDuration)
+      holdTimer.reset(targetSeconds)
+    }
+  }, [externalTriggerStop, phase, countdownTimer, holdTimer, countdownDuration, targetSeconds])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const holdProgress = phase === 'active'
     ? 1 - (holdTimer.seconds / targetSeconds)

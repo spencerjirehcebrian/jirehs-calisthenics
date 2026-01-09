@@ -22,6 +22,10 @@ interface GuidedMovementStepProps {
     current: number
     total: number
   }
+  /** External trigger to start timed hold (for voice commands) */
+  externalTriggerStart?: boolean
+  /** External trigger to stop timed hold (for voice commands) */
+  externalTriggerStop?: boolean
 }
 
 export function GuidedMovementStep({
@@ -32,7 +36,9 @@ export function GuidedMovementStep({
   onComplete,
   onSkip,
   phaseName,
-  progress
+  progress,
+  externalTriggerStart,
+  externalTriggerStop
 }: GuidedMovementStepProps) {
   const holdCountdown = useSettingsStore((state) => state.holdCountdown)
   const { playSetComplete } = useAudioCue()
@@ -106,6 +112,8 @@ export function GuidedMovementStep({
             targetSeconds={item.durationSeconds ?? 30}
             countdownDuration={holdCountdown}
             onComplete={onComplete}
+            externalTriggerStart={externalTriggerStart}
+            externalTriggerStop={externalTriggerStop}
           />
         )}
 

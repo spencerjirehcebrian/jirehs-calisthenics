@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 import { render, type RenderOptions } from '@testing-library/react'
 
 // Re-export everything from testing library
+// eslint-disable-next-line react-refresh/only-export-components
 export * from '@testing-library/react'
 
 // Custom render with providers if needed in the future

@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button, ConfirmDialog } from '@/components/base'
 import { Timer } from '@/components/base/Timer'
 import { GuidedMovementStep } from '@/components/interactions'
-import { useNavigationStore, useWorkoutSessionStore } from '@/stores'
-import { useElapsedTime, useKeepAlive } from '@/hooks'
+import { VoiceSetupModal } from '@/components/voice'
+import { useNavigationStore, useWorkoutSessionStore, useVoiceStore } from '@/stores'
+import { useElapsedTime, useKeepAlive, useVoiceCommands } from '@/hooks'
 import { warmupPhases } from '@/data/warmup'
 import { normalizeWarmupPhases, getTotalMovementSteps, getCompletedSteps } from '@/utils'
 import { motion } from 'framer-motion'
@@ -19,6 +20,11 @@ export function WarmupScreen() {
   const [currentReps, setCurrentReps] = useState(0)
   const [showExitDialog, setShowExitDialog] = useState(false)
 
+  // Voice control state
+  const { showSetupModal, isSupported: voiceSupported } = useVoiceStore()
+  const [showVoiceSetup, setShowVoiceSetup] = useState(showSetupModal && voiceSupported)
+  const [holdTriggerStart, setHoldTriggerStart] = useState(false)
+
   const sessionElapsed = useElapsedTime(startTime)
 
   const normalizedPhases = useMemo(() => normalizeWarmupPhases(warmupPhases), [])
@@ -32,6 +38,8 @@ export function WarmupScreen() {
     [normalizedPhases, phaseIndex, movementIndex, currentDirection]
   )
 
+  // Reset direction and reps when movement changes - intentional "reset on prop change" pattern
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (currentMovement?.sideHandling !== 'none') {
       setCurrentDirection('first')
@@ -40,6 +48,7 @@ export function WarmupScreen() {
     }
     setCurrentReps(0)
   }, [phaseIndex, movementIndex, currentMovement?.sideHandling])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleMovementComplete = () => {
     if (currentMovement?.sideHandling === 'per-direction' && currentDirection === 'first') {
@@ -83,6 +92,28 @@ export function WarmupScreen() {
     setPhase('strength')
     navigate('active-workout')
   }
+
+  // Voice command handlers
+  const handleVoiceNumber = useCallback((n: number) => {
+    setCurrentReps(n)
+  }, [])
+
+  const handleVoiceReady = useCallback(() => {
+    setHoldTriggerStart(true)
+    setTimeout(() => setHoldTriggerStart(false), 100)
+  }, [])
+
+  // Voice commands for guided movements
+  useVoiceCommands({
+    context: 'guidedMovement',
+    handlers: {
+      onNumber: currentMovement?.mode === 'reps' ? handleVoiceNumber : undefined,
+      onDone: handleMovementComplete,
+      onSkip: handleSkipMovement,
+      onReady: currentMovement?.mode === 'timed' ? handleVoiceReady : undefined
+    },
+    enabled: true
+  })
 
   if (!currentMovement || !currentPhase) {
     return (
@@ -131,6 +162,7 @@ export function WarmupScreen() {
           current: completedSteps + 1,
           total: totalSteps
         }}
+        externalTriggerStart={holdTriggerStart}
       />
 
       <ConfirmDialog
@@ -141,6 +173,11 @@ export function WarmupScreen() {
         cancelLabel="Continue"
         onConfirm={confirmExit}
         onCancel={() => setShowExitDialog(false)}
+      />
+
+      <VoiceSetupModal
+        isOpen={showVoiceSetup}
+        onContinue={() => setShowVoiceSetup(false)}
       />
     </motion.div>
   )

@@ -65,7 +65,8 @@ test.describe('Complete Workout Flow', () => {
   test('should track workout progress through pair and set indicators', async ({ page }) => {
     const homePage = new HomePage(page);
     const workoutPage = new WorkoutSelectionPage(page);
-    const activeWorkoutPage = new ActiveWorkoutPage(page);
+    // ActiveWorkoutPage instantiated for potential future use
+    new ActiveWorkoutPage(page);
 
     // Navigate to active workout
     await homePage.goto();
