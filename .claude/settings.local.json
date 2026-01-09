@@ -16,7 +16,20 @@
       "Bash(bun test:*)",
       "Bash(bun add:*)",
       "Bash(bunx playwright install:*)",
-      "Bash(bun run test:e2e:chromium:*)"
+      "Bash(bun run test:e2e:chromium:*)",
+      "Skill(frontend-design)",
+      "Bash(bun run:*)",
+      "Bash(timeout 5 bun run dev:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_run_code",
+      "Bash(lsof:*)"
     ]
   }
 }

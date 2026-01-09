@@ -17,49 +17,49 @@ export const routes: Record<Screen, RouteDefinition> = {
   'workout-selection': {
     screen: 'workout-selection',
     title: 'Select Workout',
-    showBackButton: true,
-    showHeader: true
+    showBackButton: false,
+    showHeader: false
   },
   warmup: {
     screen: 'warmup',
     title: 'Warm-up',
     showBackButton: false,
-    showHeader: true
+    showHeader: false
   },
   'active-workout': {
     screen: 'active-workout',
     title: 'Workout',
     showBackButton: false,
-    showHeader: true
+    showHeader: false
   },
   cooldown: {
     screen: 'cooldown',
     title: 'Cool-down',
     showBackButton: false,
-    showHeader: true
+    showHeader: false
   },
   'session-summary': {
     screen: 'session-summary',
     title: 'Summary',
     showBackButton: false,
-    showHeader: true
+    showHeader: false
   },
   'exercise-library': {
     screen: 'exercise-library',
     title: 'Exercise Library',
-    showBackButton: true,
-    showHeader: true
+    showBackButton: false,
+    showHeader: false
   },
   settings: {
     screen: 'settings',
     title: 'Settings',
-    showBackButton: true,
-    showHeader: true
+    showBackButton: false,
+    showHeader: false
   },
   practice: {
     screen: 'practice',
     title: 'Practice',
-    showBackButton: true,
-    showHeader: true
+    showBackButton: false,
+    showHeader: false
   }
 }

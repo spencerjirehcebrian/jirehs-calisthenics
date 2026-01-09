@@ -1,9 +1,10 @@
 import { ProgressRing } from '@/components/base/ProgressRing'
 import { useHoldDetection } from '@/hooks'
+import { motion } from 'framer-motion'
 
 interface HoldToSkipProps {
   onSkip: () => void
-  holdDuration?: number // default 2000ms
+  holdDuration?: number
   position?: 'bottom-right' | 'bottom-left' | 'center'
   className?: string
 }
@@ -28,14 +29,14 @@ export function HoldToSkip({
   const holdDurationSeconds = holdDuration / 1000
 
   return (
-    <div
+    <motion.div
       {...handlers}
       tabIndex={0}
       className={`
         ${positionClasses[position]}
         flex flex-col items-center
         touch-none select-none cursor-pointer
-        focus-interactive
+        focus-interactive rounded-xl p-2
         ${className}
       `}
       role="button"
@@ -44,15 +45,22 @@ export function HoldToSkip({
           ? `Skipping... ${Math.round(progress * 100)}% complete`
           : `Hold for ${holdDurationSeconds} seconds to skip`
       }
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
       <ProgressRing
         progress={progress}
         size={48}
         strokeWidth={4}
+        variant={isHolding ? 'default' : 'default'}
+        animate={true}
       />
-      <span className="text-xs text-neutral-500 mt-1 whitespace-nowrap">
+      <motion.span
+        className="text-body-xs text-ink-600 dark:text-cream-400 mt-1 whitespace-nowrap"
+        animate={{ opacity: isHolding ? 1 : 0.7 }}
+      >
         {isHolding ? 'Keep holding...' : 'Hold to skip'}
-      </span>
-    </div>
+      </motion.span>
+    </motion.div>
   )
 }

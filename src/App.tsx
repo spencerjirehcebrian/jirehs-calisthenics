@@ -45,8 +45,8 @@ const PracticeScreen = lazy(() =>
 
 function ScreenLoader() {
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-neutral-500 dark:text-neutral-400">Loading...</div>
+    <div className="flex-1 flex items-center justify-center bg-cream-100 dark:bg-ink-950">
+      <div className="text-ink-600 dark:text-cream-400">Loading...</div>
     </div>
   )
 }

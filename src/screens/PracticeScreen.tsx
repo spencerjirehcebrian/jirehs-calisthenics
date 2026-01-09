@@ -1,7 +1,10 @@
 import { Button } from '@/components/base/Button'
+import { ActionBar } from '@/components/layout/ActionBar'
 import { RepCounter, TimedHold, HoldToSkip } from '@/components/interactions'
 import { useNavigationStore, usePracticeStore, useSettingsStore } from '@/stores'
 import { getExerciseById } from '@/data/exercises'
+import { motion } from 'framer-motion'
+import { Target, Wrench } from 'lucide-react'
 
 export function PracticeScreen() {
   const navigate = useNavigationStore((state) => state.navigate)
@@ -24,31 +27,57 @@ export function PracticeScreen() {
 
   if (!exercise) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
-        <p>No exercise selected for practice</p>
+      <motion.div
+        className="flex-1 flex flex-col items-center justify-center p-6 gap-6 bg-cream-100 dark:bg-ink-950 bg-grain"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <p className="text-body-lg text-ink-600 dark:text-cream-400">
+          No exercise selected for practice
+        </p>
         <Button onClick={() => navigate('exercise-library')}>
-          Go to Exercise Library
+          GO TO EXERCISE LIBRARY
         </Button>
-      </div>
+      </motion.div>
     )
   }
 
   return (
-    <div className="flex-1 flex flex-col relative">
+    <motion.div
+      className="flex-1 flex flex-col relative bg-cream-100 dark:bg-ink-950 bg-grain"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Exit button - top left */}
-      <div className="absolute top-4 left-4 z-10">
-        <Button variant="ghost" size="sm" onClick={handleExit}>
+      <motion.div
+        className="absolute top-4 left-4 md:top-6 md:left-6 z-10"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Button variant="ghost" size="sm" onClick={handleExit} withAccent>
           Exit Practice
         </Button>
-      </div>
+      </motion.div>
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Exercise name */}
-        <div className="p-4 pt-16 text-center">
-          <p className="text-sm text-accent-600 font-medium mb-1">Practice Mode</p>
-          <h1 className="text-3xl font-bold">{exercise.name}</h1>
-        </div>
+        <motion.div
+          className="p-4 pt-16 text-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <p className="text-body-sm text-earth-600 dark:text-earth-400 font-medium mb-1 uppercase tracking-wider">
+            Practice Mode
+          </p>
+          <h1 className="font-display font-semibold text-display-md text-ink-900 dark:text-cream-100">
+            {exercise.name.toUpperCase()}
+          </h1>
+          <div className="mt-3 h-1 w-12 bg-earth-500 dark:bg-earth-400 mx-auto" />
+        </motion.div>
 
         {/* Interaction area based on exercise type */}
         {exercise.type === 'reps' ? (
@@ -67,40 +96,70 @@ export function PracticeScreen() {
         )}
 
         {/* Form cues - always shown in practice */}
-        <div className="px-4 pb-4">
-          <div className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800">
-            <h3 className="font-semibold mb-2">Form Cues</h3>
-            <ul className="text-sm space-y-1 text-neutral-600 dark:text-neutral-400">
+        <motion.div
+          className="px-4 pb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 border border-cream-300/60 dark:border-ink-700">
+            <h3 className="font-semibold mb-2 text-ink-800 dark:text-cream-100 text-body-sm uppercase tracking-wider">
+              Form Cues
+            </h3>
+            <ul className="space-y-2 text-body-md text-ink-700 dark:text-cream-300">
               {exercise.formCues.map((cue, index) => (
-                <li key={index}>{cue}</li>
+                <li key={index} className="flex gap-2">
+                  <span className="text-earth-500">-</span>
+                  {cue}
+                </li>
               ))}
             </ul>
           </div>
-        </div>
+        </motion.div>
 
         {/* Equipment setup if exists */}
         {exercise.equipmentSetup && (
-          <div className="px-4 pb-4">
-            <div className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800">
-              <h3 className="font-semibold mb-2">Equipment Setup</h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          <motion.div
+            className="px-4 pb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <div className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 border border-cream-300/60 dark:border-ink-700">
+              <div className="flex items-center gap-2 mb-2">
+                <Wrench size={16} className="text-earth-600 dark:text-earth-400" />
+                <h3 className="font-semibold text-ink-800 dark:text-cream-100 text-body-sm uppercase tracking-wider">
+                  Equipment Setup
+                </h3>
+              </div>
+              <p className="text-body-md text-ink-700 dark:text-cream-300">
                 {exercise.equipmentSetup}
               </p>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Target info */}
-        <div className="px-4 pb-4">
-          <div className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800">
-            <h3 className="font-semibold mb-2">Target</h3>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        <motion.div
+          className="px-4 pb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 border border-cream-300/60 dark:border-ink-700">
+            <div className="flex items-center gap-2 mb-2">
+              <Target size={16} className="text-earth-600 dark:text-earth-400" />
+              <h3 className="font-semibold text-ink-800 dark:text-cream-100 text-body-sm uppercase tracking-wider">
+                Target
+              </h3>
+            </div>
+            <p className="text-body-md text-ink-700 dark:text-cream-300">
               {exercise.targetDurationSeconds
                 ? `${exercise.targetDurationSeconds} seconds`
                 : `${exercise.targetRepsMin}-${exercise.targetRepsMax} reps`}
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Hold to skip for early exit */}
@@ -108,12 +167,19 @@ export function PracticeScreen() {
 
       {/* Done button for rep exercises */}
       {exercise.type === 'reps' && (
-        <div className="p-4 border-t border-neutral-200 dark:border-neutral-800">
-          <Button fullWidth onClick={handleComplete}>
-            Done
-          </Button>
-        </div>
+        <motion.div
+          className="p-4 border-t border-cream-300/60 dark:border-ink-700 bg-cream-50/80 dark:bg-ink-900/80 backdrop-blur-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <ActionBar>
+            <Button fullWidth onClick={handleComplete}>
+              DONE
+            </Button>
+          </ActionBar>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }

@@ -1,10 +1,21 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { Timer } from '@/components/base/Timer'
-import { HoldToSkip } from './HoldToSkip'
-import { useTimer, useAudioCue, useKeyboardInteraction } from '@/hooks'
+import { ProgressRing } from '@/components/base/ProgressRing'
+import { TapToSkipOverlay } from './TapToSkipOverlay'
+import { useTimer, useAudioCue } from '@/hooks'
+import { motion } from 'framer-motion'
+
+const REST_TIPS = [
+  'Shake out your arms',
+  'Take deep breaths',
+  'Stay hydrated',
+  'Visualize the next set',
+  'Keep your muscles warm',
+  'Focus on your breathing'
+]
 
 interface RestTimerProps {
-  initialSeconds?: number // default 90
+  initialSeconds?: number
   onComplete: () => void
   nextExerciseName?: string
   className?: string
@@ -20,28 +31,29 @@ export function RestTimer({
   const hasPlayedWarning = useRef(false)
   const hasPlayedComplete = useRef(false)
 
+  // Pick a random rest tip
+  const restTip = useMemo(() => {
+    return REST_TIPS[Math.floor(Math.random() * REST_TIPS.length)]
+  }, [])
+
   const timer = useTimer({
     initialSeconds,
     direction: 'down',
     autoStart: true,
     onTick: (seconds) => {
-      // Play warning at 10 seconds remaining
       if (seconds === 10 && !hasPlayedWarning.current) {
         hasPlayedWarning.current = true
         playRestWarning()
       }
     },
     onComplete: () => {
-      // Play completion sound
       if (!hasPlayedComplete.current) {
         hasPlayedComplete.current = true
         playRestComplete()
       }
-      // Timer continues into negative, user must tap to proceed
     }
   })
 
-  // Reset audio flags when initialSeconds changes (new rest period)
   useEffect(() => {
     hasPlayedWarning.current = false
     hasPlayedComplete.current = false
@@ -52,57 +64,100 @@ export function RestTimer({
     onComplete()
   }
 
-  const keyboardProps = useKeyboardInteraction({
-    onActivate: handleComplete
-  })
+  // Calculate progress (1 = full, 0 = empty)
+  const progress = Math.max(0, timer.seconds / initialSeconds)
+  const isWarning = timer.seconds <= 10 && timer.seconds > 0
+  const isOvertime = timer.seconds < 0
 
   return (
-    <div
-      onClick={handleComplete}
-      {...keyboardProps}
-      className={`
-        flex-1 flex flex-col items-center justify-center
-        cursor-pointer select-none
-        relative
-        min-h-interaction
-        focus-interactive
-        ${className}
-      `}
-      aria-label="Tap or press Enter to continue to next exercise"
-      aria-live="polite"
-    >
+    <TapToSkipOverlay onSkip={handleComplete}>
+      <motion.div
+        className={`
+          flex-1 flex flex-col items-center justify-center
+          relative
+          min-h-interaction
+          ${className}
+        `}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        aria-live="polite"
+      >
       {/* Rest label */}
-      <p className="text-2xl font-semibold text-neutral-500 mb-4">
-        Rest
-      </p>
+      <motion.p
+        className="text-display-md font-display font-semibold text-earth-600 dark:text-earth-400 mb-8"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        REST
+      </motion.p>
 
-      {/* Timer display */}
-      <Timer seconds={timer.seconds} size="xl" />
+      {/* Circular progress ring with timer inside */}
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      >
+        <ProgressRing
+          progress={progress}
+          size={200}
+          strokeWidth={8}
+          variant={isOvertime ? 'warning' : isWarning ? 'warning' : 'default'}
+          animate={true}
+        >
+          <Timer
+            seconds={timer.seconds}
+            size="display"
+            animate={false}
+          />
+        </ProgressRing>
+      </motion.div>
 
-      {/* Over-resting message - accessible warning state */}
-      {timer.seconds < 0 && (
-        <p className="warning-state mt-2" role="alert">
+      {/* Over-resting message */}
+      {isOvertime && (
+        <motion.p
+          className="warning-state mt-4 animate-pulse-slow"
+          role="alert"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
           Over-resting
-        </p>
+        </motion.p>
       )}
 
       {/* Next exercise preview */}
       {nextExerciseName && (
-        <p className="text-neutral-500 mt-6">
-          Next: {nextExerciseName}
-        </p>
+        <motion.p
+          className="text-ink-600 dark:text-cream-400 mt-8 text-body-md"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          Next: <span className="font-semibold">{nextExerciseName}</span>
+        </motion.p>
       )}
 
-      {/* Tap instruction */}
-      <p className="text-sm text-neutral-400 mt-4">
-        Tap anywhere to continue
-      </p>
+      {/* Rest tip */}
+      <motion.p
+        className="text-ink-500 dark:text-cream-400 mt-4 text-body-sm italic"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        "{restTip}"
+      </motion.p>
 
-      {/* Hold to skip */}
-      <HoldToSkip
-        onSkip={handleComplete}
-        position="bottom-right"
-      />
-    </div>
+      {/* Hold instruction */}
+      <motion.p
+        className="text-body-sm text-ink-500 dark:text-cream-400 mt-8 animate-pulse-slow uppercase tracking-wide"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        Hold anywhere to continue
+      </motion.p>
+      </motion.div>
+    </TapToSkipOverlay>
   )
 }

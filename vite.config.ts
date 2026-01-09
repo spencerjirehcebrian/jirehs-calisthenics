@@ -15,8 +15,8 @@ export default defineConfig({
         name: "Jireh's Calisthenics",
         short_name: 'Calisthenics',
         description: 'A structured 3-day-per-week calisthenics workout app',
-        theme_color: '#0ea5e9',
-        background_color: '#0a0a0a',
+        theme_color: '#9c8259',
+        background_color: '#faf8f5',
         display: 'standalone',
         orientation: 'any',
         icons: [

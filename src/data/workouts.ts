@@ -128,7 +128,7 @@ export const workouts: Workout[] = [
       },
       {
         exercise1: {
-          exerciseId: 'ring-rows-45',
+          exerciseId: 'ring-rows-horizontal',
           sets: 3,
           targetRepsMin: 8,
           targetRepsMax: 10

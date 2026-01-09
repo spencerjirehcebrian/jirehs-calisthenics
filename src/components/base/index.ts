@@ -1,4 +1,5 @@
 export { Button } from './Button'
+export { ConfirmDialog } from './ConfirmDialog'
 export { Timer } from './Timer'
 export { ProgressRing } from './ProgressRing'
 export { ErrorBoundary } from './ErrorBoundary'

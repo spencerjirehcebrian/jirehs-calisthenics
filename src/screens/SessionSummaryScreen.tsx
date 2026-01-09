@@ -2,6 +2,10 @@ import { Button } from '@/components/base/Button'
 import { useNavigationStore, useWorkoutSessionStore, useExerciseHistoryStore } from '@/stores'
 import { getWorkoutById } from '@/data/workouts'
 import { getExerciseById } from '@/data/exercises'
+import { motion, type Variants } from 'framer-motion'
+import { Check, X } from 'lucide-react'
+
+const easeOutExpo = [0.16, 1, 0.3, 1] as const
 
 export function SessionSummaryScreen() {
   const navigate = useNavigationStore((state) => state.navigate)
@@ -19,7 +23,6 @@ export function SessionSummaryScreen() {
   const workout = workoutId ? getWorkoutById(workoutId) : null
 
   const handleDone = () => {
-    // Save to exercise history before resetting
     exerciseProgress.forEach(progress => {
       const lastReps = progress.repsPerSet[progress.repsPerSet.length - 1]
       const lastDuration = progress.durationPerSet[progress.durationPerSet.length - 1]
@@ -41,17 +44,20 @@ export function SessionSummaryScreen() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  // Use endTime for accurate duration
   const duration = startTime && endTime ? endTime - startTime : 0
 
-  // Get exercise display text based on progress data
+  const totalReps = exerciseProgress.reduce((sum, p) =>
+    sum + p.repsPerSet.reduce((a, b) => a + b, 0), 0
+  )
+
+  const totalSets = exerciseProgress.reduce((sum, p) => sum + p.completedSets, 0)
+
   const getExerciseDisplay = (exerciseId: string) => {
     const progress = exerciseProgress.find(p => p.exerciseId === exerciseId)
     if (!progress || progress.completedSets === 0) return 'Not completed'
 
     const exercise = getExerciseById(exerciseId)
 
-    // For timed exercises, show duration
     if (exercise?.type === 'timed' || exercise?.type === 'timed-per-side') {
       const avgDuration = progress.durationPerSet.length > 0
         ? Math.round(progress.durationPerSet.reduce((a, b) => a + b, 0) / progress.durationPerSet.length)
@@ -59,80 +65,141 @@ export function SessionSummaryScreen() {
       return `${progress.completedSets} sets, ~${avgDuration}s avg`
     }
 
-    // For rep exercises, show reps
-    const totalReps = progress.repsPerSet.reduce((a, b) => a + b, 0)
-    return `${progress.completedSets} sets, ${totalReps} total reps`
+    const exerciseReps = progress.repsPerSet.reduce((a, b) => a + b, 0)
+    return `${progress.completedSets} sets, ${exerciseReps} total reps`
   }
 
-  // Get all exercises from the workout
   const exercises = workout?.pairs.flatMap(pair => [
     getExerciseById(pair.exercise1.exerciseId),
     getExerciseById(pair.exercise2.exerciseId)
   ]).filter(Boolean) ?? []
 
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+    }
+  }
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: easeOutExpo } }
+  }
+
   return (
-    <div className="flex-1 flex flex-col p-6">
-      <h2 className="text-2xl font-bold mb-6">Workout Complete</h2>
+    <motion.div
+      className="flex-1 flex flex-col p-6 bg-cream-100 dark:bg-ink-950 bg-grain"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Title */}
+      <motion.div className="mb-8" variants={itemVariants}>
+        <h2 className="font-display font-semibold text-display-lg text-ink-900 dark:text-cream-100">
+          WORKOUT
+        </h2>
+        <h2 className="font-display font-semibold text-display-lg text-ink-900 dark:text-cream-100">
+          COMPLETE
+        </h2>
+        <div className="mt-3 h-1 w-16 bg-earth-500 dark:bg-earth-400" />
+      </motion.div>
 
-      {/* Summary content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6 rounded-xl bg-neutral-100 dark:bg-neutral-800 mb-4">
-          <h3 className="font-semibold mb-2">Total Duration</h3>
-          <p className="text-3xl font-bold font-mono">{formatDuration(duration)}</p>
+      {/* Stat boxes */}
+      <motion.div className="grid grid-cols-3 gap-3 mb-6" variants={itemVariants}>
+        <div className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 shadow-[var(--shadow-sm)] text-center">
+          <p className="font-display font-bold text-display-md text-ink-900 dark:text-cream-100">
+            {formatDuration(duration)}
+          </p>
+          <p className="text-body-xs uppercase tracking-wider text-ink-500 dark:text-cream-400 mt-1">
+            Time
+          </p>
         </div>
+        <div className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 shadow-[var(--shadow-sm)] text-center">
+          <p className="font-display font-bold text-display-md text-ink-900 dark:text-cream-100">
+            {totalReps}
+          </p>
+          <p className="text-body-xs uppercase tracking-wider text-ink-500 dark:text-cream-400 mt-1">
+            Reps
+          </p>
+        </div>
+        <div className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 shadow-[var(--shadow-sm)] text-center">
+          <p className="font-display font-bold text-display-md text-ink-900 dark:text-cream-100">
+            {totalSets}
+          </p>
+          <p className="text-body-xs uppercase tracking-wider text-ink-500 dark:text-cream-400 mt-1">
+            Sets
+          </p>
+        </div>
+      </motion.div>
 
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto space-y-4">
         {/* Session Phases */}
-        <div className="p-6 rounded-xl bg-neutral-100 dark:bg-neutral-800 mb-4">
-          <h3 className="font-semibold mb-4">Session Phases</h3>
+        <motion.div
+          className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 border border-cream-300/60 dark:border-ink-700"
+          variants={itemVariants}
+        >
+          <h3 className="font-semibold mb-3 text-ink-800 dark:text-cream-100 text-body-sm uppercase tracking-wider">
+            Session Phases
+          </h3>
           <div className="space-y-2">
-            <div className="flex justify-between">
-              <span>Warm-up</span>
-              <span className={`text-sm ${
-                warmupStatus === 'completed' ? 'text-green-600 dark:text-green-400' :
-                warmupStatus === 'skipped' ? 'text-yellow-600 dark:text-yellow-400' :
-                'text-neutral-500'
+            <div className="flex justify-between items-center">
+              <span className="text-body-md text-ink-700 dark:text-cream-300">Warm-up</span>
+              <span className={`flex items-center gap-1 text-body-sm ${
+                warmupStatus === 'completed' ? 'text-moss-600 dark:text-moss-400' :
+                warmupStatus === 'skipped' ? 'text-terra-600 dark:text-terra-400' :
+                'text-ink-500'
               }`}>
+                {warmupStatus === 'completed' && <Check size={16} />}
+                {warmupStatus === 'skipped' && <X size={16} />}
                 {warmupStatus === 'completed' ? 'Completed' :
-                 warmupStatus === 'skipped' ? 'Skipped' :
-                 'Pending'}
+                 warmupStatus === 'skipped' ? 'Skipped' : 'Pending'}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span>Cool-down</span>
-              <span className={`text-sm ${
-                cooldownStatus === 'completed' ? 'text-green-600 dark:text-green-400' :
-                cooldownStatus === 'skipped' ? 'text-yellow-600 dark:text-yellow-400' :
-                'text-neutral-500'
+            <div className="flex justify-between items-center">
+              <span className="text-body-md text-ink-700 dark:text-cream-300">Cool-down</span>
+              <span className={`flex items-center gap-1 text-body-sm ${
+                cooldownStatus === 'completed' ? 'text-moss-600 dark:text-moss-400' :
+                cooldownStatus === 'skipped' ? 'text-terra-600 dark:text-terra-400' :
+                'text-ink-500'
               }`}>
+                {cooldownStatus === 'completed' && <Check size={16} />}
+                {cooldownStatus === 'skipped' && <X size={16} />}
                 {cooldownStatus === 'completed' ? 'Completed' :
-                 cooldownStatus === 'skipped' ? 'Skipped' :
-                 'Pending'}
+                 cooldownStatus === 'skipped' ? 'Skipped' : 'Pending'}
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Exercises Completed */}
-        <div className="p-6 rounded-xl bg-neutral-100 dark:bg-neutral-800">
-          <h3 className="font-semibold mb-4">Exercises Completed</h3>
-          <ul className="space-y-2">
+        {/* Exercises */}
+        <motion.div
+          className="p-4 rounded-xl bg-cream-50 dark:bg-ink-800 border border-cream-300/60 dark:border-ink-700"
+          variants={itemVariants}
+        >
+          <h3 className="font-semibold mb-3 text-ink-800 dark:text-cream-100 text-body-sm uppercase tracking-wider">
+            Exercises
+          </h3>
+          <ul className="space-y-3">
             {exercises.map((exercise) => (
               <li key={exercise?.id} className="flex justify-between items-start">
-                <span>{exercise?.name}</span>
-                <span className="text-neutral-500 text-sm text-right">
+                <span className="text-body-md text-ink-700 dark:text-cream-300">{exercise?.name}</span>
+                <span className="text-body-sm text-ink-500 dark:text-cream-400 text-right">
                   {exercise ? getExerciseDisplay(exercise.id) : 'N/A'}
                 </span>
               </li>
             ))}
           </ul>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="mt-auto pt-6">
+      {/* Done button */}
+      <motion.div className="mt-6" variants={itemVariants}>
         <Button fullWidth onClick={handleDone}>
-          Done
+          DONE
         </Button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

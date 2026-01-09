@@ -1,31 +1,219 @@
 @import "tailwindcss";
 
 @theme {
-  /* Accent color - sky blue */
-  --color-accent-50: #f0f9ff;
-  --color-accent-100: #e0f2fe;
-  --color-accent-200: #bae6fd;
-  --color-accent-300: #7dd3fc;
-  --color-accent-400: #38bdf8;
-  --color-accent-500: #0ea5e9;
-  --color-accent-600: #0284c7;
-  --color-accent-700: #0369a1;
-  --color-accent-800: #075985;
-  --color-accent-900: #0c4a6e;
+  /* ========================================
+     Typography - Athletic Brutalism
+     ======================================== */
+  --font-family-display: 'Fraunces', Georgia, serif;
+  --font-family-body: 'Outfit', system-ui, sans-serif;
 
-  /* Responsive typography - scales with viewport */
-  --font-size-display: clamp(3rem, 15vmin, 6rem);
-  --font-size-heading: clamp(1.5rem, 5vmin, 1.875rem);
-  --font-size-subheading: clamp(1rem, 3vmin, 1.25rem);
+  /* Type Scale (fluid sizing) */
+  --font-size-display-hero: clamp(3.5rem, 18vmin, 7rem);
+  --font-size-display-xl: clamp(3rem, 15vmin, 6rem);
+  --font-size-display-lg: clamp(2rem, 8vmin, 3.5rem);
+  --font-size-display-md: clamp(1.5rem, 5vmin, 2rem);
+  --font-size-body-lg: 1.125rem;
+  --font-size-body-md: 1rem;
+  --font-size-body-sm: 0.875rem;
+  --font-size-body-xs: 0.75rem;
+
+  /* ========================================
+     Color System
+     ======================================== */
+
+  /* Ink - Primary text and dark backgrounds */
+  --color-ink-950: #0a0908;
+  --color-ink-900: #1a1816;
+  --color-ink-800: #2d2926;
+  --color-ink-700: #443e3a;
+  --color-ink-600: #4d4743;
+  --color-ink-500: #5c5650;
+
+  /* Cream - Light backgrounds */
+  --color-cream-50: #fdfcfa;
+  --color-cream-100: #faf7f2;
+  --color-cream-200: #f5f0e8;
+  --color-cream-300: #ebe4d8;
+  --color-cream-400: #d9cfc0;
+
+  /* Earth - Primary accent (warm browns) */
+  --color-earth-50: #faf8f5;
+  --color-earth-100: #f5f0e8;
+  --color-earth-200: #e8dfd0;
+  --color-earth-300: #d4c4a8;
+  --color-earth-400: #8a7352;
+  --color-earth-500: #9c8259;
+  --color-earth-600: #7d6645;
+  --color-earth-700: #5e4d36;
+  --color-earth-800: #3f3426;
+  --color-earth-900: #2a2219;
+
+  /* Moss - Success states */
+  --color-moss-50: #f0f7f1;
+  --color-moss-100: #dcebde;
+  --color-moss-200: #bdd9c2;
+  --color-moss-300: #94c19c;
+  --color-moss-400: #6aa575;
+  --color-moss-500: #4a8a55;
+  --color-moss-600: #3a6e44;
+  --color-moss-700: #305838;
+  --color-moss-800: #29472f;
+  --color-moss-900: #233b28;
+
+  /* Terra - Warning/attention */
+  --color-terra-50: #fdf6f3;
+  --color-terra-100: #fbeae3;
+  --color-terra-200: #f7d5c7;
+  --color-terra-300: #f0b8a1;
+  --color-terra-400: #e69272;
+  --color-terra-500: #d97452;
+  --color-terra-600: #c55a3a;
+  --color-terra-700: #a4482f;
+  --color-terra-800: #873e2c;
+  --color-terra-900: #6f3628;
+
+  /* Gold - Achievement/celebration */
+  --color-gold-50: #fdfaed;
+  --color-gold-100: #faf3d1;
+  --color-gold-200: #f5e6a3;
+  --color-gold-300: #edd46b;
+  --color-gold-400: #d4b83d;
+  --color-gold-500: #c9a227;
+  --color-gold-600: #a8871f;
+  --color-gold-700: #86691a;
+  --color-gold-800: #6e5419;
+  --color-gold-900: #5c4517;
+
+  /* Stone palette - Warm neutrals (legacy support) */
+  --color-stone-50: #fafaf9;
+  --color-stone-100: #f5f5f4;
+  --color-stone-200: #e7e5e4;
+  --color-stone-300: #d6d3d1;
+  --color-stone-400: #a8a29e;
+  --color-stone-500: #78716c;
+  --color-stone-600: #57534e;
+  --color-stone-700: #44403c;
+  --color-stone-800: #292524;
+  --color-stone-900: #1c1917;
+
+  /* ========================================
+     Spacing System
+     ======================================== */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* ========================================
+     Border Radius
+     ======================================== */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+
+  /* ========================================
+     Shadows
+     ======================================== */
+  --shadow-sm: 0 1px 2px rgba(10, 9, 8, 0.05);
+  --shadow-md: 0 4px 6px rgba(10, 9, 8, 0.07), 0 2px 4px rgba(10, 9, 8, 0.04);
+  --shadow-lg: 0 10px 15px rgba(10, 9, 8, 0.1), 0 4px 6px rgba(10, 9, 8, 0.05);
+  --shadow-xl: 0 20px 25px rgba(10, 9, 8, 0.1), 0 8px 10px rgba(10, 9, 8, 0.04);
+  --shadow-earth: 0 4px 14px rgba(125, 102, 69, 0.25);
+  --shadow-earth-lg: 0 8px 24px rgba(125, 102, 69, 0.3);
+
+  /* ========================================
+     Animation Timing Functions
+     ======================================== */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out-circ: cubic-bezier(0.85, 0, 0.15, 1);
+  --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Animation Durations */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+}
+
+/* ========================================
+   CSS Custom Properties for Semantic Colors
+   ======================================== */
+:root {
+  /* Light mode (default) */
+  --bg-primary: var(--color-cream-100);
+  --bg-secondary: var(--color-cream-50);
+  --bg-elevated: white;
+  --text-primary: var(--color-ink-900);
+  --text-secondary: var(--color-ink-600);
+  --text-muted: var(--color-ink-500);
+  --accent-primary: var(--color-earth-600);
+  --accent-success: var(--color-moss-500);
+  --accent-warning: var(--color-terra-500);
+  --accent-gold: var(--color-gold-500);
+}
+
+.dark {
+  /* Dark mode */
+  --bg-primary: var(--color-ink-950);
+  --bg-secondary: var(--color-ink-900);
+  --bg-elevated: var(--color-ink-800);
+  --text-primary: var(--color-cream-100);
+  --text-secondary: var(--color-cream-300);
+  --text-muted: var(--color-cream-400);
+  --accent-primary: var(--color-earth-500);
+  --accent-success: var(--color-moss-400);
+  --accent-warning: var(--color-terra-400);
+  --accent-gold: var(--color-gold-400);
+
+  /* Dark mode shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 8px 10px rgba(0, 0, 0, 0.25);
+  --shadow-earth: 0 4px 14px rgba(156, 130, 89, 0.3);
+  --shadow-earth-lg: 0 8px 24px rgba(156, 130, 89, 0.35);
 }
 
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    height: 100%;
+    background-color: var(--color-cream-100);
+  }
+
+  html.dark {
+    background-color: var(--color-ink-950);
   }
 
   body {
     @apply antialiased;
+    font-family: var(--font-family-body);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100%;
+    min-height: 100%;
+  }
+
+  #root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Apply display font to headings */
+  h1, h2, h3 {
+    font-family: var(--font-family-display);
   }
 
   /* High contrast mode - automatic via media query */
@@ -36,26 +224,114 @@
     }
 
     /* Disable decorative animations for clarity */
-    .animate-pulse {
+    .animate-pulse,
+    .animate-breathe,
+    .animate-pulse-slow {
       animation: none;
     }
 
     /* Increase contrast for muted text */
-    .text-neutral-400,
-    .text-neutral-500 {
-      color: var(--color-neutral-600);
+    .text-stone-400,
+    .text-stone-500,
+    .text-ink-500 {
+      color: var(--color-ink-600);
     }
   }
 
   @media (prefers-contrast: more) and (prefers-color-scheme: dark) {
-    .text-neutral-400,
-    .text-neutral-500 {
-      color: var(--color-neutral-300);
+    .text-stone-400,
+    .text-stone-500,
+    .text-ink-500 {
+      color: var(--color-cream-300);
     }
   }
 }
 
 @layer utilities {
+  /* ========================================
+     Font Family Utilities
+     ======================================== */
+  .font-display {
+    font-family: var(--font-family-display);
+  }
+
+  .font-body {
+    font-family: var(--font-family-body);
+  }
+
+  /* ========================================
+     Typography Size Utilities
+     ======================================== */
+  .text-display-hero {
+    font-size: var(--font-size-display-hero);
+    line-height: 0.9;
+  }
+
+  .text-display-xl {
+    font-size: var(--font-size-display-xl);
+    line-height: 0.95;
+  }
+
+  .text-display-lg {
+    font-size: var(--font-size-display-lg);
+    line-height: 1;
+  }
+
+  .text-display-md {
+    font-size: var(--font-size-display-md);
+    line-height: 1.1;
+  }
+
+  .text-body-lg {
+    font-size: var(--font-size-body-lg);
+    line-height: 1.5;
+  }
+
+  .text-body-md {
+    font-size: var(--font-size-body-md);
+    line-height: 1.5;
+  }
+
+  .text-body-sm {
+    font-size: var(--font-size-body-sm);
+    line-height: 1.5;
+  }
+
+  .text-body-xs {
+    font-size: var(--font-size-body-xs);
+    line-height: 1.5;
+  }
+
+  /* ========================================
+     Semantic Color Utilities
+     ======================================== */
+  .bg-surface-primary {
+    background-color: var(--bg-primary);
+  }
+
+  .bg-surface-secondary {
+    background-color: var(--bg-secondary);
+  }
+
+  .bg-surface-elevated {
+    background-color: var(--bg-elevated);
+  }
+
+  .text-color-primary {
+    color: var(--text-primary);
+  }
+
+  .text-color-secondary {
+    color: var(--text-secondary);
+  }
+
+  .text-color-muted {
+    color: var(--text-muted);
+  }
+
+  /* ========================================
+     Touch & Interaction Utilities
+     ======================================== */
   .touch-target {
     min-width: 44px;
     min-height: 44px;
@@ -83,13 +359,15 @@
     }
   }
 
-  /* Enhanced focus indicator for interactive elements */
+  /* ========================================
+     Focus Utilities
+     ======================================== */
   .focus-interactive {
     outline: none;
   }
 
   .focus-interactive:focus-visible {
-    outline: 2px solid var(--color-accent-500);
+    outline: 2px solid var(--color-earth-500);
     outline-offset: 2px;
   }
 
@@ -100,9 +378,11 @@
     }
   }
 
-  /* Warning state - not color-only (uses underline + bold) */
+  /* ========================================
+     Warning State Utility
+     ======================================== */
   .warning-state {
-    color: var(--color-red-500);
+    color: var(--color-terra-600);
     font-weight: 700;
     text-decoration: underline;
     text-decoration-style: wavy;
@@ -111,7 +391,7 @@
 
   @media (prefers-contrast: more) {
     .warning-state {
-      background-color: var(--color-red-100);
+      background-color: var(--color-terra-100);
       padding-inline: 0.5rem;
       padding-block: 0.25rem;
       border-radius: 0.25rem;
@@ -120,11 +400,13 @@
 
   @media (prefers-contrast: more) and (prefers-color-scheme: dark) {
     .warning-state {
-      background-color: var(--color-red-900);
+      background-color: var(--color-terra-900);
     }
   }
 
-  /* Screen reader only - visually hidden but accessible */
+  /* ========================================
+     Screen Reader Only
+     ======================================== */
   .sr-only {
     position: absolute;
     width: 1px;
@@ -135,5 +417,313 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+  }
+
+  /* ========================================
+     Scrollbar Utilities
+     ======================================== */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+  }
+
+  /* ========================================
+     Keyframe Animations
+     ======================================== */
+
+  /* Stagger entrance - items slide up and fade in */
+  @keyframes slide-up-fade {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up-fade {
+    animation: slide-up-fade var(--duration-slow) var(--ease-out-expo);
+  }
+
+  /* Scale pulse for tap feedback */
+  @keyframes tap-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  .animate-tap-pulse {
+    animation: tap-pulse var(--duration-fast) ease-out;
+  }
+
+  /* Ripple effect */
+  @keyframes ripple {
+    from {
+      transform: scale(0);
+      opacity: 0.5;
+    }
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  .animate-ripple {
+    animation: ripple var(--duration-slower) ease-out forwards;
+  }
+
+  /* Breathing animation for countdowns */
+  @keyframes breathe-scale {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(0.95);
+      opacity: 0.85;
+    }
+  }
+
+  .animate-breathe-scale {
+    animation: breathe-scale 1s ease-in-out infinite;
+  }
+
+  /* Progress ring drain */
+  @keyframes ring-drain {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: var(--circumference); }
+  }
+
+  /* Celebration particles */
+  @keyframes float-up {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-100px) scale(0.5);
+    }
+  }
+
+  .animate-float-up {
+    animation: float-up 1s ease-out forwards;
+  }
+
+  /* Original breathe animation */
+  @keyframes breathe {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.02);
+      opacity: 0.95;
+    }
+  }
+
+  .animate-breathe {
+    animation: breathe 3s ease-in-out infinite;
+  }
+
+  /* Pulse slow */
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 2s ease-in-out infinite;
+  }
+
+  /* Fade in up */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out;
+  }
+
+  /* Slide in from left */
+  @keyframes slide-in-left {
+    from {
+      opacity: 0;
+      transform: translateX(-24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left var(--duration-slow) var(--ease-out-expo);
+  }
+
+  /* Scale fade in */
+  @keyframes scale-fade {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-fade {
+    animation: scale-fade 0.4s var(--ease-out-expo);
+  }
+
+  /* Countdown number animation */
+  @keyframes countdown-pop {
+    0% {
+      transform: scale(1.2);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .animate-countdown-pop {
+    animation: countdown-pop var(--duration-slower) var(--spring);
+  }
+
+  /* Checkmark draw animation */
+  @keyframes draw-check {
+    from {
+      stroke-dashoffset: 24;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .animate-draw-check {
+    animation: draw-check 0.4s var(--ease-out-expo) forwards;
+  }
+
+  /* Staggered delays */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  /* ========================================
+     Hover Effects
+     ======================================== */
+  .hover-lift {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .hover-lift:active {
+    transform: translateY(0);
+  }
+
+  /* Card hover lift (more pronounced) */
+  .hover-lift-lg {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+  }
+
+  .hover-lift-lg:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hover-lift-lg:active {
+    transform: translateY(-2px);
+  }
+
+  /* ========================================
+     Background Utilities
+     ======================================== */
+  .bg-gradient-warmth {
+    background: linear-gradient(180deg, var(--color-cream-100) 0%, var(--color-cream-200) 100%);
+  }
+
+  .dark .bg-gradient-warmth {
+    background: linear-gradient(180deg, var(--color-ink-950) 0%, var(--color-ink-900) 100%);
+  }
+
+  /* Grain texture overlay */
+  .bg-grain {
+    position: relative;
+  }
+
+  .bg-grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+  }
+
+  .dark .bg-grain::after {
+    mix-blend-mode: soft-light;
+    opacity: 0.03;
+  }
+
+  /* Elevated surface styling */
+  .surface-elevated {
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ========================================
+     Reduced Motion Preference
+     ======================================== */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-breathe,
+    .animate-pulse-slow,
+    .animate-fade-in-up,
+    .animate-slide-up-fade,
+    .animate-tap-pulse,
+    .animate-ripple,
+    .animate-breathe-scale,
+    .animate-float-up,
+    .animate-slide-in-left,
+    .animate-scale-fade,
+    .animate-countdown-pop,
+    .animate-draw-check {
+      animation: none;
+    }
+
+    .hover-lift:hover,
+    .hover-lift-lg:hover {
+      transform: none;
+    }
+
+    * {
+      transition-duration: 0.01ms !important;
+    }
   }
 }

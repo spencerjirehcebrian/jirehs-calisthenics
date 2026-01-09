@@ -35,10 +35,10 @@ describe('RestTimer', () => {
   })
 
   describe('initial display', () => {
-    it('should display "Rest" label', () => {
+    it('should display "REST" label', () => {
       render(<RestTimer onComplete={vi.fn()} />)
 
-      expect(screen.getByText('Rest')).toBeInTheDocument()
+      expect(screen.getByText('REST')).toBeInTheDocument()
     })
 
     it('should start with initialSeconds (default 90)', () => {
@@ -56,7 +56,8 @@ describe('RestTimer', () => {
     it('should show next exercise name if provided', () => {
       render(<RestTimer onComplete={vi.fn()} nextExerciseName="Push-ups" />)
 
-      expect(screen.getByText('Next: Push-ups')).toBeInTheDocument()
+      expect(screen.getByText(/Next:/)).toBeInTheDocument()
+      expect(screen.getByText('Push-ups')).toBeInTheDocument()
     })
   })
 
@@ -97,42 +98,58 @@ describe('RestTimer', () => {
   })
 
   describe('interactions', () => {
-    it('should call onComplete on click', () => {
+    it('should call onComplete after holding', () => {
       const onComplete = vi.fn()
       render(<RestTimer onComplete={onComplete} />)
 
-      // Click the main area (not the HoldToSkip button)
-      const container = screen.getByLabelText('Tap or press Enter to continue to next exercise')
-      fireEvent.click(container)
+      // The TapToSkipOverlay wraps the content with hold-to-skip behavior
+      const container = screen.getByRole('button', { name: /Hold for 2 seconds to skip/i })
+
+      act(() => {
+        fireEvent.pointerDown(container, { clientX: 100, clientY: 100 })
+      })
+
+      // Wait for hold duration (default 2000ms)
+      act(() => {
+        vi.advanceTimersByTime(2100)
+      })
 
       expect(onComplete).toHaveBeenCalledTimes(1)
     })
 
-    it('should call onComplete on Enter key', () => {
+    it('should call onComplete on keyboard hold', () => {
       const onComplete = vi.fn()
       render(<RestTimer onComplete={onComplete} />)
 
-      const container = screen.getByRole('button', { name: /Tap or press Enter/i })
-      fireEvent.keyDown(container, { key: 'Enter' })
+      const container = screen.getByRole('button', { name: /Hold for 2 seconds to skip/i })
+
+      act(() => {
+        fireEvent.keyDown(container, { key: 'Enter' })
+      })
+
+      // Wait for hold duration
+      act(() => {
+        vi.advanceTimersByTime(2100)
+      })
 
       expect(onComplete).toHaveBeenCalledTimes(1)
     })
   })
 
-  describe('HoldToSkip integration', () => {
-    it('should include HoldToSkip component', () => {
+  describe('TapToSkipOverlay integration', () => {
+    it('should show hold instruction', () => {
       render(<RestTimer onComplete={vi.fn()} />)
 
-      expect(screen.getByText('Hold to skip')).toBeInTheDocument()
+      expect(screen.getByText('Hold anywhere to continue')).toBeInTheDocument()
     })
   })
 
   describe('accessibility', () => {
     it('should have aria-live region', () => {
-      render(<RestTimer onComplete={vi.fn()} />)
+      const { container } = render(<RestTimer onComplete={vi.fn()} />)
 
-      const container = screen.getByRole('button', { name: /Tap or press Enter/i })
-      expect(container).toHaveAttribute('aria-live', 'polite')
+      const liveRegion = container.querySelector('[aria-live="polite"]')
+      expect(liveRegion).toBeInTheDocument()
     })
 
     it('should have Over-resting alert role when negative', () => {

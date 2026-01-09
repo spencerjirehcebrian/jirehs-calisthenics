@@ -1,12 +1,24 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jireh's Calisthenics</title>
 
+    <!-- Google Fonts - Athletic Brutalism Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#0ea5e9" />
+    <meta name="theme-color" content="#9c8259" />
     <meta name="description" content="A structured 3-day-per-week calisthenics workout app" />
 
     <!-- iOS PWA Support -->
@@ -18,7 +30,12 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.ico" />
   </head>
-  <body>
+  <body style="background-color: #faf7f2;">
+    <script>
+      if (document.documentElement.classList.contains('dark')) {
+        document.body.style.backgroundColor = '#0a0908';
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
