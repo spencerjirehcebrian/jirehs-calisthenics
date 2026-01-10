@@ -1,6 +1,6 @@
 export { RepCounter } from './RepCounter'
 export { TimedHold } from './TimedHold'
+export type { TimedHoldPhase } from './TimedHold'
 export { RestTimer } from './RestTimer'
 export { HoldToSkip } from './HoldToSkip'
 export { TapToSkipOverlay } from './TapToSkipOverlay'
-export { GuidedMovementStep } from './GuidedMovementStep'

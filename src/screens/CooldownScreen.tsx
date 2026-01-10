@@ -1,28 +1,59 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button, ConfirmDialog } from '@/components/base'
 import { Timer } from '@/components/base/Timer'
-import { GuidedMovementStep } from '@/components/interactions'
-import { useNavigationStore, useWorkoutSessionStore } from '@/stores'
-import { useElapsedTime, useKeepAlive, useVoiceCommands } from '@/hooks'
+import { RepCounter, TimedHold, TapToSkipOverlay } from '@/components/interactions'
+import {
+  ExerciseHeader,
+  InteractionArea,
+  MetadataTabs,
+  BottomBar,
+  LoadingState
+} from '@/components/workout'
+import {
+  useNavigationStore,
+  useWorkoutSessionStore,
+  useCooldownFlowStore
+} from '@/stores'
+import {
+  useElapsedTime,
+  useKeepAlive,
+  useVoiceCommands,
+  useExitConfirmation
+} from '@/hooks'
+import { useSettingsStore } from '@/stores'
 import { cooldownStretches } from '@/data/cooldown'
-import { normalizeCooldownStretch } from '@/utils'
+import { normalizeCooldownStretch, getSideLabel } from '@/utils'
 import { motion } from 'framer-motion'
 
 export function CooldownScreen() {
   useKeepAlive(true)
   const navigate = useNavigationStore((state) => state.navigate)
   const { endWorkout, startTime, completeCooldown: setCooldownCompleted } = useWorkoutSessionStore()
+  const holdCountdown = useSettingsStore((state) => state.holdCountdown)
 
-  const [stretchIndex, setStretchIndex] = useState(0)
-  const [currentSide, setCurrentSide] = useState<'first' | 'second' | null>(null)
-  const [currentReps, setCurrentReps] = useState(0)
-  const [showExitDialog, setShowExitDialog] = useState(false)
+  // Flow state from Zustand store
+  const {
+    stretchIndex,
+    currentSide,
+    currentReps,
+    setStartTime,
+    timedHoldPhase,
+    setCurrentSide,
+    setCurrentReps,
+    incrementReps,
+    setTimedHoldPhase,
+    advanceToNextStretch,
+    resetFlow
+  } = useCooldownFlowStore()
 
-  // Voice control state
-  const [holdTriggerStart, setHoldTriggerStart] = useState(false)
+  // Exit confirmation
+  const { openDialog: handleExit, dialogProps } = useExitConfirmation(() => navigate('home'))
 
+  // Timers
   const sessionElapsed = useElapsedTime(startTime)
+  const setElapsed = useElapsedTime(setStartTime)
 
+  // Normalized data
   const normalizedStretches = useMemo(
     () => cooldownStretches.map(normalizeCooldownStretch),
     []
@@ -30,6 +61,7 @@ export function CooldownScreen() {
 
   const currentStretch = normalizedStretches[stretchIndex]
 
+  // Progress calculation
   const totalSteps = useMemo(() => {
     return normalizedStretches.reduce((total, stretch) => {
       return total + (stretch.sideHandling !== 'none' ? 2 : 1)
@@ -47,8 +79,7 @@ export function CooldownScreen() {
     return completed
   }, [normalizedStretches, stretchIndex, currentSide, currentStretch?.sideHandling])
 
-  // Reset side and reps when stretch changes - intentional "reset on prop change" pattern
-  /* eslint-disable react-hooks/set-state-in-effect */
+  // Reset side when stretch changes
   useEffect(() => {
     if (currentStretch?.sideHandling !== 'none') {
       setCurrentSide('first')
@@ -56,55 +87,75 @@ export function CooldownScreen() {
       setCurrentSide(null)
     }
     setCurrentReps(0)
-  }, [stretchIndex, currentStretch?.sideHandling])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  }, [stretchIndex, currentStretch?.sideHandling, setCurrentSide, setCurrentReps])
 
-  const handleStretchComplete = () => {
+  // Reset flow when component mounts
+  useEffect(() => {
+    resetFlow()
+  }, [resetFlow])
+
+  const completeCooldown = useCallback(() => {
+    setCooldownCompleted()
+    endWorkout()
+    navigate('session-summary')
+  }, [setCooldownCompleted, endWorkout, navigate])
+
+  const handleStretchComplete = useCallback(() => {
     if (currentStretch?.sideHandling === 'per-side' && currentSide === 'first') {
       setCurrentSide('second')
       setCurrentReps(0)
       return
     }
-    advanceToNextStretch()
-  }
 
-  const advanceToNextStretch = () => {
-    const nextIndex = stretchIndex + 1
+    const hasNext = advanceToNextStretch(normalizedStretches.length)
 
-    if (nextIndex < normalizedStretches.length) {
-      setStretchIndex(nextIndex)
-    } else {
+    if (!hasNext) {
       completeCooldown()
     }
-  }
+  }, [
+    currentStretch?.sideHandling,
+    currentSide,
+    setCurrentSide,
+    setCurrentReps,
+    advanceToNextStretch,
+    normalizedStretches.length,
+    completeCooldown
+  ])
 
-  const handleSkipStretch = () => {
-    advanceToNextStretch()
-  }
+  const handleSkipStretch = useCallback(() => {
+    const hasNext = advanceToNextStretch(normalizedStretches.length)
 
-  const handleExit = () => {
-    setShowExitDialog(true)
-  }
-
-  const confirmExit = () => {
-    navigate('home')
-  }
-
-  const completeCooldown = () => {
-    setCooldownCompleted()
-    endWorkout()
-    navigate('session-summary')
-  }
+    if (!hasNext) {
+      completeCooldown()
+    }
+  }, [advanceToNextStretch, normalizedStretches.length, completeCooldown])
 
   // Voice command handlers
   const handleVoiceNumber = useCallback((n: number) => {
     setCurrentReps(n)
-  }, [])
+  }, [setCurrentReps])
 
+  const [holdTriggerStart, setHoldTriggerStart] = useState(false)
   const handleVoiceReady = useCallback(() => {
     setHoldTriggerStart(true)
     setTimeout(() => setHoldTriggerStart(false), 100)
   }, [])
+
+  // Unified tap handler for the overlay
+  const handleTap = useCallback(() => {
+    if (currentStretch?.mode === 'reps') {
+      incrementReps()
+    } else if (currentStretch?.mode === 'timed' && timedHoldPhase === 'ready') {
+      // Trigger timed hold start
+      setHoldTriggerStart(true)
+      setTimeout(() => setHoldTriggerStart(false), 100)
+    }
+    // For timed mode in countdown/active/complete phases, tap does nothing
+  }, [currentStretch?.mode, timedHoldPhase, incrementReps])
+
+  // Determine if tap should be enabled
+  const isTapEnabled = currentStretch?.mode === 'reps' ||
+    (currentStretch?.mode === 'timed' && timedHoldPhase === 'ready')
 
   // Voice commands for guided movements
   useVoiceCommands({
@@ -118,64 +169,114 @@ export function CooldownScreen() {
     enabled: true
   })
 
+  // Loading state
   if (!currentStretch) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6 bg-cream-100 dark:bg-ink-950">
-        <p className="text-ink-600 dark:text-cream-400">Loading cool-down...</p>
-      </div>
-    )
+    return <LoadingState message="Loading cool-down..." />
   }
 
+  // Build tabs for MetadataTabs
+  const tabs = [
+    currentStretch.instructions ? {
+      id: 'instructions',
+      label: 'Instructions',
+      content: (
+        <p className="text-body-sm text-ink-700 dark:text-cream-300">
+          {currentStretch.instructions}
+        </p>
+      )
+    } : null,
+    {
+      id: 'timer',
+      label: 'Timer',
+      content: (
+        <div className="flex items-center justify-center py-2">
+          <Timer seconds={setElapsed} size="lg" animate={false} />
+        </div>
+      )
+    }
+  ].filter(Boolean) as Array<{ id: string; label: string; content: React.ReactNode }>
+
+  const sideLabel = currentSide ? getSideLabel(currentStretch.sideHandling, currentSide) : undefined
+
   return (
-    <motion.div
-      className="flex-1 flex flex-col min-h-0 relative"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Exit button - top left */}
+    <TapToSkipOverlay onSkip={handleSkipStretch} onTap={isTapEnabled ? handleTap : undefined}>
       <motion.div
-        className="absolute top-2 left-2 z-10"
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2 }}
+        className="flex-1 flex flex-col min-h-0 relative bg-cream-100 dark:bg-ink-950 bg-grain"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
       >
-        <Button variant="ghost" size="sm" onClick={handleExit} withAccent>
-          Exit
-        </Button>
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {currentStretch.name}. Cooldown.
+        </div>
+
+        {/* Exit button - top left */}
+        <motion.div
+          className="absolute top-4 left-4 z-10"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Button variant="ghost" size="sm" onClick={handleExit} withAccent>
+            Exit
+          </Button>
+        </motion.div>
+
+        {/* Session timer - top right */}
+        <div className="absolute top-4 right-4 z-10">
+          <span className="text-body-sm text-ink-600 dark:text-cream-400">
+            <Timer seconds={sessionElapsed} size="sm" animate={false} />
+          </span>
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+          {/* Exercise header */}
+          <ExerciseHeader
+            contextLabel="COOLDOWN"
+            exerciseName={currentStretch.name}
+            sideLabel={sideLabel ?? undefined}
+          />
+
+          {/* Interaction area */}
+          <InteractionArea>
+            {currentStretch.mode === 'reps' ? (
+              <RepCounter
+                currentReps={currentReps}
+                targetRepsMin={currentStretch.reps}
+                targetRepsMax={currentStretch.reps}
+              />
+            ) : (
+              <TimedHold
+                targetSeconds={currentStretch.durationSeconds ?? 30}
+                countdownDuration={holdCountdown}
+                onComplete={handleStretchComplete}
+                onPhaseChange={setTimedHoldPhase}
+                externalTriggerStart={holdTriggerStart}
+              />
+            )}
+          </InteractionArea>
+
+          {/* Metadata tabs */}
+          <MetadataTabs tabs={tabs} defaultTab={tabs[0]?.id} />
+        </div>
+
+        {/* Bottom bar */}
+        <BottomBar
+          progress={{
+            current: completedSteps + 1,
+            total: totalSteps
+          }}
+          contextInfo="Static Stretches"
+          actionButton={
+            currentStretch.mode === 'reps'
+              ? { label: 'DONE', onClick: handleStretchComplete }
+              : undefined
+          }
+        />
+
+        <ConfirmDialog {...dialogProps} />
       </motion.div>
-
-      {/* Session timer - top right */}
-      <div className="absolute top-4 right-4 z-10">
-        <span className="text-body-sm text-ink-600 dark:text-cream-400">
-          <Timer seconds={sessionElapsed} size="sm" animate={false} />
-        </span>
-      </div>
-
-      {/* Main content */}
-      <GuidedMovementStep
-        item={currentStretch}
-        currentSide={currentSide}
-        currentReps={currentReps}
-        onRepIncrement={() => setCurrentReps(r => r + 1)}
-        onComplete={handleStretchComplete}
-        onSkip={handleSkipStretch}
-        progress={{
-          current: completedSteps + 1,
-          total: totalSteps
-        }}
-        externalTriggerStart={holdTriggerStart}
-      />
-
-      <ConfirmDialog
-        isOpen={showExitDialog}
-        title="Exit Workout?"
-        message="Your progress will not be saved. Are you sure you want to exit?"
-        confirmLabel="Exit"
-        cancelLabel="Continue"
-        onConfirm={confirmExit}
-        onCancel={() => setShowExitDialog(false)}
-      />
-    </motion.div>
+    </TapToSkipOverlay>
   )
 }

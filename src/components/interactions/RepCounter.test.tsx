@@ -1,11 +1,11 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import { RepCounter } from './RepCounter'
 
 describe('RepCounter', () => {
   describe('display', () => {
     it('should display current rep count', () => {
-      render(<RepCounter currentReps={5} onIncrement={vi.fn()} />)
+      render(<RepCounter currentReps={5} />)
 
       expect(screen.getByText('5')).toBeInTheDocument()
     })
@@ -16,7 +16,6 @@ describe('RepCounter', () => {
           currentReps={0}
           targetRepsMin={10}
           targetRepsMax={10}
-          onIncrement={vi.fn()}
         />
       )
 
@@ -29,7 +28,6 @@ describe('RepCounter', () => {
           currentReps={0}
           targetRepsMin={8}
           targetRepsMax={12}
-          onIncrement={vi.fn()}
         />
       )
 
@@ -41,7 +39,6 @@ describe('RepCounter', () => {
         <RepCounter
           currentReps={0}
           targetRepsMin={15}
-          onIncrement={vi.fn()}
         />
       )
 
@@ -53,7 +50,6 @@ describe('RepCounter', () => {
         <RepCounter
           currentReps={0}
           isMaxReps
-          onIncrement={vi.fn()}
         />
       )
 
@@ -61,54 +57,56 @@ describe('RepCounter', () => {
     })
 
     it('should not display target when no target props provided', () => {
-      render(<RepCounter currentReps={0} onIncrement={vi.fn()} />)
+      render(<RepCounter currentReps={0} />)
 
       expect(screen.queryByText(/Target:/)).not.toBeInTheDocument()
     })
-  })
 
-  describe('interactions', () => {
-    it('should call onIncrement on click', () => {
-      const onIncrement = vi.fn()
-      render(<RepCounter currentReps={0} onIncrement={onIncrement} />)
+    it('should display "Tap anywhere to count" hint', () => {
+      render(<RepCounter currentReps={0} />)
 
-      fireEvent.click(screen.getByRole('button'))
-
-      expect(onIncrement).toHaveBeenCalledTimes(1)
-    })
-
-    it('should call onIncrement on Enter key', () => {
-      const onIncrement = vi.fn()
-      render(<RepCounter currentReps={0} onIncrement={onIncrement} />)
-
-      fireEvent.keyDown(screen.getByRole('button'), { key: 'Enter' })
-
-      expect(onIncrement).toHaveBeenCalledTimes(1)
-    })
-
-    it('should call onIncrement on Space key', () => {
-      const onIncrement = vi.fn()
-      render(<RepCounter currentReps={0} onIncrement={onIncrement} />)
-
-      fireEvent.keyDown(screen.getByRole('button'), { key: ' ' })
-
-      expect(onIncrement).toHaveBeenCalledTimes(1)
+      expect(screen.getByText('Tap anywhere to count')).toBeInTheDocument()
     })
   })
 
   describe('accessibility', () => {
     it('should have correct aria-label', () => {
-      render(<RepCounter currentReps={7} onIncrement={vi.fn()} />)
+      render(<RepCounter currentReps={7} />)
 
       expect(
-        screen.getByLabelText('Current reps: 7. Tap or press Enter to add one rep.')
+        screen.getByLabelText('Current reps: 7')
       ).toBeInTheDocument()
     })
 
-    it('should have role button', () => {
-      render(<RepCounter currentReps={0} onIncrement={vi.fn()} />)
+    it('should have aria-live for updates', () => {
+      const { container } = render(<RepCounter currentReps={0} />)
 
-      expect(screen.getByRole('button')).toBeInTheDocument()
+      expect(container.querySelector('[aria-live="polite"]')).toBeInTheDocument()
+    })
+  })
+
+  describe('progress bar', () => {
+    it('should show progress bar when target is set', () => {
+      render(
+        <RepCounter
+          currentReps={5}
+          targetRepsMin={10}
+          targetRepsMax={10}
+        />
+      )
+
+      expect(screen.getByText('5/10')).toBeInTheDocument()
+    })
+
+    it('should not show progress bar for max reps mode', () => {
+      render(
+        <RepCounter
+          currentReps={5}
+          isMaxReps
+        />
+      )
+
+      expect(screen.queryByText(/\/\d+/)).not.toBeInTheDocument()
     })
   })
 })

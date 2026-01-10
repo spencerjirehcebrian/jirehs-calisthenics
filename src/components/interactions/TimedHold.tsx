@@ -2,18 +2,19 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Timer } from '@/components/base/Timer'
 import { ProgressBar } from '@/components/base/ProgressBar'
 import { Button } from '@/components/base/Button'
-import { useTimer, useAudioCue, useKeyboardInteraction } from '@/hooks'
+import { useTimer, useAudioCue } from '@/hooks'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check } from 'lucide-react'
 
-type TimedHoldPhase = 'ready' | 'countdown' | 'active' | 'complete'
+export type TimedHoldPhase = 'ready' | 'countdown' | 'active' | 'complete'
 
 interface TimedHoldProps {
   targetSeconds: number
   countdownDuration?: 2 | 3
   onComplete: () => void
+  onPhaseChange?: (phase: TimedHoldPhase) => void
   className?: string
-  /** External trigger to start the hold (for voice commands) */
+  /** External trigger to start the hold (for voice commands or parent tap) */
   externalTriggerStart?: boolean
   /** External trigger to abort the hold (for voice commands) */
   externalTriggerStop?: boolean
@@ -53,6 +54,7 @@ export function TimedHold({
   targetSeconds,
   countdownDuration = 3,
   onComplete,
+  onPhaseChange,
   className = '',
   externalTriggerStart,
   externalTriggerStop
@@ -60,6 +62,17 @@ export function TimedHold({
   const [phase, setPhase] = useState<TimedHoldPhase>('ready')
   const { playHoldTick, playHoldComplete } = useAudioCue()
   const hasPlayedComplete = useRef(false)
+  const onPhaseChangeRef = useRef(onPhaseChange)
+
+  // Keep ref updated
+  useEffect(() => {
+    onPhaseChangeRef.current = onPhaseChange
+  }, [onPhaseChange])
+
+  // Notify parent of phase changes
+  useEffect(() => {
+    onPhaseChangeRef.current?.(phase)
+  }, [phase])
 
   const countdownTimer = useTimer({
     initialSeconds: countdownDuration,
@@ -95,11 +108,6 @@ export function TimedHold({
       countdownTimer.start()
     }
   }, [phase, countdownTimer])
-
-  const keyboardProps = useKeyboardInteraction({
-    onActivate: handleTapToStart,
-    disabled: phase !== 'ready'
-  })
 
   // Reset when target/countdown changes - this is intentional "reset on prop change" pattern
   // Timer refs are intentionally excluded from deps as they change every render
@@ -137,16 +145,12 @@ export function TimedHold({
 
   return (
     <div
-      onClick={phase === 'ready' ? handleTapToStart : undefined}
-      {...(phase === 'ready' ? keyboardProps : {})}
       className={`
         flex-1 flex flex-col items-center justify-center
-        ${phase === 'ready' ? 'cursor-pointer focus-interactive' : ''}
         select-none
         min-h-interaction
         ${className}
       `}
-      aria-label={phase === 'ready' ? 'Tap or press Enter to start timer' : undefined}
       aria-live="polite"
     >
       <AnimatePresence mode="wait">
@@ -163,18 +167,24 @@ export function TimedHold({
             <h3 className="font-display font-semibold text-ink-900 dark:text-cream-100 text-display-md mb-4">
               HOLD
             </h3>
-            <div className="w-48 h-48 rounded-[2rem] bg-cream-50 dark:bg-ink-800 shadow-[var(--shadow-md)] flex flex-col items-center justify-center mb-6">
+            {/* Display container - flat styling, no shadow */}
+            <div className="w-48 h-48 rounded-[2rem] bg-cream-50 dark:bg-ink-800 border-2 border-cream-200 dark:border-ink-700 flex flex-col items-center justify-center mb-6">
               <span className="font-display font-bold text-display-lg text-ink-900 dark:text-cream-100">
                 0:{String(targetSeconds).padStart(2, '0')}
               </span>
               <span className="text-body-sm text-ink-500 dark:text-cream-400 mt-1">seconds</span>
             </div>
+            {/* Tap anywhere hint */}
+            <p className="text-body-sm text-ink-500 dark:text-cream-400 mb-4 animate-pulse-slow">
+              Tap anywhere when ready
+            </p>
+            {/* Button as fallback option */}
             <Button
-              size="lg"
+              size="md"
+              variant="secondary"
               onClick={handleTapToStart}
-              className="mt-4"
             >
-              TAP WHEN READY
+              or tap here
             </Button>
           </motion.div>
         )}

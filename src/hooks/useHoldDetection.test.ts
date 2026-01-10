@@ -125,7 +125,7 @@ describe('useHoldDetection', () => {
       expect(result.current.isHolding).toBe(false)
     })
 
-    it('should call onHoldCancel when cancelled before complete', () => {
+    it('should call onHoldCancel when cancelled via pointerLeave', () => {
       const onHoldCancel = vi.fn()
       const { result } = renderHook(() =>
         useHoldDetection({ onHoldComplete: vi.fn(), onHoldCancel })
@@ -138,10 +138,32 @@ describe('useHoldDetection', () => {
       })
 
       act(() => {
-        result.current.handlers.onPointerUp({} as React.PointerEvent)
+        result.current.handlers.onPointerLeave({} as React.PointerEvent)
       })
 
       expect(onHoldCancel).toHaveBeenCalledTimes(1)
+    })
+
+    it('should call onQuickTap when released quickly via pointerUp', () => {
+      const onQuickTap = vi.fn()
+      const onHoldCancel = vi.fn()
+      const { result } = renderHook(() =>
+        useHoldDetection({ onHoldComplete: vi.fn(), onHoldCancel, onQuickTap, quickTapThreshold: 300 })
+      )
+
+      act(() => {
+        result.current.handlers.onPointerDown({
+          preventDefault: vi.fn(),
+        } as unknown as React.PointerEvent)
+      })
+
+      // Release quickly (before 300ms threshold)
+      act(() => {
+        result.current.handlers.onPointerUp({} as React.PointerEvent)
+      })
+
+      expect(onQuickTap).toHaveBeenCalledTimes(1)
+      expect(onHoldCancel).not.toHaveBeenCalled()
     })
   })
 

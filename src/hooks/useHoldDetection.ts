@@ -2,9 +2,11 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 
 interface UseHoldDetectionOptions {
   holdDuration?: number // ms, default 2000
+  quickTapThreshold?: number // ms, default 300 - release before this = quick tap
   onHoldComplete: () => void
   onHoldStart?: () => void
   onHoldCancel?: () => void
+  onQuickTap?: () => void // Called when released before quickTapThreshold
 }
 
 interface UseHoldDetectionReturn {
@@ -23,9 +25,11 @@ interface UseHoldDetectionReturn {
 
 export function useHoldDetection({
   holdDuration = 2000,
+  quickTapThreshold = 300,
   onHoldComplete,
   onHoldStart,
-  onHoldCancel
+  onHoldCancel,
+  onQuickTap
 }: UseHoldDetectionOptions): UseHoldDetectionReturn {
   const [isHolding, setIsHolding] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -38,33 +42,42 @@ export function useHoldDetection({
   const onHoldCompleteRef = useRef(onHoldComplete)
   const onHoldStartRef = useRef(onHoldStart)
   const onHoldCancelRef = useRef(onHoldCancel)
+  const onQuickTapRef = useRef(onQuickTap)
 
   // Keep refs updated
   useEffect(() => {
     onHoldCompleteRef.current = onHoldComplete
     onHoldStartRef.current = onHoldStart
     onHoldCancelRef.current = onHoldCancel
-  }, [onHoldComplete, onHoldStart, onHoldCancel])
+    onQuickTapRef.current = onQuickTap
+  }, [onHoldComplete, onHoldStart, onHoldCancel, onQuickTap])
 
   // updateProgress needs to be declared before cancelHold to avoid "accessed before declaration" error
   // Using a ref to store the function allows mutual recursion between updateProgress and cancelHold
   const updateProgressRef = useRef<() => void>(() => {})
 
-  const cancelHold = useCallback(() => {
+  const cancelHold = useCallback((checkQuickTap = false, elapsedTime?: number) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
       animationFrameRef.current = null
     }
+
+    const wasHolding = startTimeRef.current !== null
     startTimeRef.current = null
     holdingKeyRef.current = null
     setIsHolding(false)
     setProgress(0)
 
     if (!hasCompletedRef.current) {
-      onHoldCancelRef.current?.()
+      // Check if this was a quick tap (released before threshold)
+      if (checkQuickTap && wasHolding && elapsedTime !== undefined && elapsedTime < quickTapThreshold) {
+        onQuickTapRef.current?.()
+      } else {
+        onHoldCancelRef.current?.()
+      }
     }
     hasCompletedRef.current = false
-  }, [])
+  }, [quickTapThreshold])
 
   const updateProgress = useCallback(() => {
     if (!startTimeRef.current) return
@@ -115,13 +128,17 @@ export function useHoldDetection({
       startHold()
     },
     onPointerUp: () => {
-      cancelHold()
+      // Calculate elapsed time to detect quick tap
+      const elapsed = startTimeRef.current ? Date.now() - startTimeRef.current : undefined
+      cancelHold(true, elapsed)
     },
     onPointerLeave: () => {
-      cancelHold()
+      // Don't trigger quick tap on leave - user moved away
+      cancelHold(false)
     },
     onPointerCancel: () => {
-      cancelHold()
+      // Don't trigger quick tap on cancel
+      cancelHold(false)
     },
     onKeyDown: (e: React.KeyboardEvent) => {
       // Only respond to Enter or Space
@@ -139,12 +156,14 @@ export function useHoldDetection({
     onKeyUp: (e: React.KeyboardEvent) => {
       // Only cancel if releasing the same key that started the hold
       if (e.key === holdingKeyRef.current) {
-        cancelHold()
+        // Calculate elapsed time to detect quick tap
+        const elapsed = startTimeRef.current ? Date.now() - startTimeRef.current : undefined
+        cancelHold(true, elapsed)
       }
     },
     onBlur: () => {
-      // Cancel hold if element loses focus
-      cancelHold()
+      // Cancel hold if element loses focus - don't trigger quick tap
+      cancelHold(false)
     }
   }
 

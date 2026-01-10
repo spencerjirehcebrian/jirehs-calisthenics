@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { useNavigationStore, useVoiceStore } from '@/stores'
+import { useAudioCue } from '@/hooks'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Button } from '@/components/base/Button'
 import { ErrorBoundary } from '@/components/base/ErrorBoundary'
@@ -102,6 +103,7 @@ function AppHeader() {
 }
 
 function App() {
+  useAudioCue() // Initialize audio listeners on app mount
   const currentScreen = useNavigationStore((state) => state.currentScreen)
   const route = routes[currentScreen]
   const checkVoiceSupport = useVoiceStore((state) => state.checkSupport)

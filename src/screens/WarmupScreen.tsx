@@ -1,45 +1,78 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button, ConfirmDialog } from '@/components/base'
 import { Timer } from '@/components/base/Timer'
-import { GuidedMovementStep } from '@/components/interactions'
+import { RepCounter, TimedHold, TapToSkipOverlay } from '@/components/interactions'
 import { VoiceSetupModal } from '@/components/voice'
-import { useNavigationStore, useWorkoutSessionStore, useVoiceStore } from '@/stores'
-import { useElapsedTime, useKeepAlive, useVoiceCommands } from '@/hooks'
+import {
+  ExerciseHeader,
+  InteractionArea,
+  MetadataTabs,
+  BottomBar,
+  LoadingState
+} from '@/components/workout'
+import {
+  useNavigationStore,
+  useWorkoutSessionStore,
+  useVoiceStore,
+  useWarmupFlowStore
+} from '@/stores'
+import {
+  useElapsedTime,
+  useKeepAlive,
+  useVoiceCommands,
+  useExitConfirmation
+} from '@/hooks'
+import { useSettingsStore } from '@/stores'
 import { warmupPhases } from '@/data/warmup'
-import { normalizeWarmupPhases, getTotalMovementSteps, getCompletedSteps } from '@/utils'
+import { normalizeWarmupPhases, getTotalMovementSteps, getCompletedSteps, getSideLabel } from '@/utils'
 import { motion } from 'framer-motion'
 
 export function WarmupScreen() {
   useKeepAlive(true)
   const navigate = useNavigationStore((state) => state.navigate)
   const { setPhase, startTime, completeWarmup: setWarmupCompleted } = useWorkoutSessionStore()
+  const holdCountdown = useSettingsStore((state) => state.holdCountdown)
 
-  const [phaseIndex, setPhaseIndex] = useState(0)
-  const [movementIndex, setMovementIndex] = useState(0)
-  const [currentDirection, setCurrentDirection] = useState<'first' | 'second' | null>(null)
-  const [currentReps, setCurrentReps] = useState(0)
-  const [showExitDialog, setShowExitDialog] = useState(false)
+  // Flow state from Zustand store
+  const {
+    phaseIndex,
+    movementIndex,
+    currentDirection,
+    currentReps,
+    setStartTime,
+    timedHoldPhase,
+    setCurrentDirection,
+    setCurrentReps,
+    incrementReps,
+    setTimedHoldPhase,
+    advanceToNextMovement,
+    resetFlow
+  } = useWarmupFlowStore()
 
   // Voice control state
-  const { showSetupModal, isSupported: voiceSupported } = useVoiceStore()
-  const [showVoiceSetup, setShowVoiceSetup] = useState(showSetupModal && voiceSupported)
-  const [holdTriggerStart, setHoldTriggerStart] = useState(false)
+  const { showSetupModal, isSupported: voiceSupported, setShowSetupModal } = useVoiceStore()
 
+  // Exit confirmation
+  const { openDialog: handleExit, dialogProps } = useExitConfirmation(() => navigate('home'))
+
+  // Timers
   const sessionElapsed = useElapsedTime(startTime)
+  const setElapsed = useElapsedTime(setStartTime)
 
+  // Normalized data
   const normalizedPhases = useMemo(() => normalizeWarmupPhases(warmupPhases), [])
 
   const currentPhase = normalizedPhases[phaseIndex]
   const currentMovement = currentPhase?.items[movementIndex]
 
+  // Progress calculation
   const totalSteps = useMemo(() => getTotalMovementSteps(normalizedPhases), [normalizedPhases])
   const completedSteps = useMemo(
     () => getCompletedSteps(normalizedPhases, phaseIndex, movementIndex, currentDirection),
     [normalizedPhases, phaseIndex, movementIndex, currentDirection]
   )
 
-  // Reset direction and reps when movement changes - intentional "reset on prop change" pattern
-  /* eslint-disable react-hooks/set-state-in-effect */
+  // Reset direction when movement changes
   useEffect(() => {
     if (currentMovement?.sideHandling !== 'none') {
       setCurrentDirection('first')
@@ -47,61 +80,83 @@ export function WarmupScreen() {
       setCurrentDirection(null)
     }
     setCurrentReps(0)
-  }, [phaseIndex, movementIndex, currentMovement?.sideHandling])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  }, [phaseIndex, movementIndex, currentMovement?.sideHandling, setCurrentDirection, setCurrentReps])
 
-  const handleMovementComplete = () => {
+  // Reset flow when component mounts
+  useEffect(() => {
+    resetFlow()
+  }, [resetFlow])
+
+  const handleMovementComplete = useCallback(() => {
     if (currentMovement?.sideHandling === 'per-direction' && currentDirection === 'first') {
       setCurrentDirection('second')
       setCurrentReps(0)
       return
     }
-    advanceToNextMovement()
-  }
 
-  const advanceToNextMovement = () => {
-    const nextMovementIndex = movementIndex + 1
+    const hasNext = advanceToNextMovement(
+      currentPhase?.items.length ?? 0,
+      normalizedPhases.length
+    )
 
-    if (currentPhase && nextMovementIndex < currentPhase.items.length) {
-      setMovementIndex(nextMovementIndex)
-    } else {
-      const nextPhaseIndex = phaseIndex + 1
-      if (nextPhaseIndex < normalizedPhases.length) {
-        setPhaseIndex(nextPhaseIndex)
-        setMovementIndex(0)
-      } else {
-        completeWarmup()
-      }
+    if (!hasNext) {
+      // Warmup complete
+      setWarmupCompleted()
+      setPhase('strength')
+      navigate('active-workout')
     }
-  }
+  }, [
+    currentMovement?.sideHandling,
+    currentDirection,
+    setCurrentDirection,
+    setCurrentReps,
+    advanceToNextMovement,
+    currentPhase?.items.length,
+    normalizedPhases.length,
+    setWarmupCompleted,
+    setPhase,
+    navigate
+  ])
 
-  const handleSkipMovement = () => {
-    advanceToNextMovement()
-  }
+  const handleSkipMovement = useCallback(() => {
+    const hasNext = advanceToNextMovement(
+      currentPhase?.items.length ?? 0,
+      normalizedPhases.length
+    )
 
-  const handleExit = () => {
-    setShowExitDialog(true)
-  }
-
-  const confirmExit = () => {
-    navigate('home')
-  }
-
-  const completeWarmup = () => {
-    setWarmupCompleted()
-    setPhase('strength')
-    navigate('active-workout')
-  }
+    if (!hasNext) {
+      setWarmupCompleted()
+      setPhase('strength')
+      navigate('active-workout')
+    }
+  }, [advanceToNextMovement, currentPhase?.items.length, normalizedPhases.length, setWarmupCompleted, setPhase, navigate])
 
   // Voice command handlers
   const handleVoiceNumber = useCallback((n: number) => {
     setCurrentReps(n)
-  }, [])
+  }, [setCurrentReps])
 
+  const [holdTriggerStart, setHoldTriggerStart] = useState(false)
   const handleVoiceReady = useCallback(() => {
     setHoldTriggerStart(true)
     setTimeout(() => setHoldTriggerStart(false), 100)
   }, [])
+
+  // Unified tap handler for the overlay
+  const handleTap = useCallback(() => {
+    if (currentMovement?.mode === 'reps') {
+      incrementReps()
+    } else if (currentMovement?.mode === 'timed' && timedHoldPhase === 'ready') {
+      // Trigger timed hold start
+      setHoldTriggerStart(true)
+      setTimeout(() => setHoldTriggerStart(false), 100)
+    }
+    // For timed mode in countdown/active/complete phases, tap does nothing
+  }, [currentMovement?.mode, timedHoldPhase, incrementReps])
+
+  // Determine if tap should be enabled
+  const isTapEnabled = currentMovement?.mode === 'reps' ||
+    (currentMovement?.mode === 'timed' && timedHoldPhase === 'ready')
 
   // Voice commands for guided movements
   useVoiceCommands({
@@ -115,70 +170,119 @@ export function WarmupScreen() {
     enabled: true
   })
 
+  // Loading state
   if (!currentMovement || !currentPhase) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6 bg-cream-100 dark:bg-ink-950">
-        <p className="text-ink-600 dark:text-cream-400">Loading warm-up...</p>
-      </div>
-    )
+    return <LoadingState message="Loading warm-up..." />
   }
 
+  // Build tabs for MetadataTabs
+  const tabs = [
+    currentMovement.instructions ? {
+      id: 'instructions',
+      label: 'Instructions',
+      content: (
+        <p className="text-body-sm text-ink-700 dark:text-cream-300">
+          {currentMovement.instructions}
+        </p>
+      )
+    } : null,
+    {
+      id: 'timer',
+      label: 'Timer',
+      content: (
+        <div className="flex items-center justify-center py-2">
+          <Timer seconds={setElapsed} size="lg" animate={false} />
+        </div>
+      )
+    }
+  ].filter(Boolean) as Array<{ id: string; label: string; content: React.ReactNode }>
+
+  const sideLabel = currentDirection ? getSideLabel(currentMovement.sideHandling, currentDirection) : undefined
+
   return (
-    <motion.div
-      className="flex-1 flex flex-col min-h-0 relative"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Exit button - top left */}
+    <TapToSkipOverlay onSkip={handleSkipMovement} onTap={isTapEnabled ? handleTap : undefined}>
       <motion.div
-        className="absolute top-2 left-2 z-10"
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2 }}
+        className="flex-1 flex flex-col min-h-0 relative bg-cream-100 dark:bg-ink-950 bg-grain"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
       >
-        <Button variant="ghost" size="sm" onClick={handleExit} withAccent>
-          Exit
-        </Button>
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {currentMovement.name}. {currentPhase.name}.
+        </div>
+
+        {/* Exit button - top left */}
+        <motion.div
+          className="absolute top-4 left-4 z-10"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Button variant="ghost" size="sm" onClick={handleExit} withAccent>
+            Exit
+          </Button>
+        </motion.div>
+
+        {/* Session timer - top right */}
+        <div className="absolute top-4 right-4 z-10">
+          <span className="text-body-sm text-ink-600 dark:text-cream-400">
+            <Timer seconds={sessionElapsed} size="sm" animate={false} />
+          </span>
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+          {/* Exercise header */}
+          <ExerciseHeader
+            contextLabel={`WARMUP - ${currentPhase.name.toUpperCase()}`}
+            exerciseName={currentMovement.name}
+            sideLabel={sideLabel ?? undefined}
+          />
+
+          {/* Interaction area */}
+          <InteractionArea>
+            {currentMovement.mode === 'reps' ? (
+              <RepCounter
+                currentReps={currentReps}
+                targetRepsMin={currentMovement.reps}
+                targetRepsMax={currentMovement.reps}
+              />
+            ) : (
+              <TimedHold
+                targetSeconds={currentMovement.durationSeconds ?? 30}
+                countdownDuration={holdCountdown}
+                onComplete={handleMovementComplete}
+                onPhaseChange={setTimedHoldPhase}
+                externalTriggerStart={holdTriggerStart}
+              />
+            )}
+          </InteractionArea>
+
+          {/* Metadata tabs */}
+          <MetadataTabs tabs={tabs} defaultTab={tabs[0]?.id} />
+        </div>
+
+        {/* Bottom bar */}
+        <BottomBar
+          progress={{
+            current: completedSteps + 1,
+            total: totalSteps
+          }}
+          contextInfo={currentPhase.name}
+          actionButton={
+            currentMovement.mode === 'reps'
+              ? { label: 'DONE', onClick: handleMovementComplete }
+              : undefined
+          }
+        />
+
+        <ConfirmDialog {...dialogProps} />
+
+        <VoiceSetupModal
+          isOpen={showSetupModal && voiceSupported}
+          onContinue={() => setShowSetupModal(false)}
+        />
       </motion.div>
-
-      {/* Session timer - top right */}
-      <div className="absolute top-4 right-4 z-10">
-        <span className="text-body-sm text-ink-600 dark:text-cream-400">
-          <Timer seconds={sessionElapsed} size="sm" animate={false} />
-        </span>
-      </div>
-
-      {/* Main content */}
-      <GuidedMovementStep
-        item={currentMovement}
-        currentSide={currentDirection}
-        currentReps={currentReps}
-        onRepIncrement={() => setCurrentReps(r => r + 1)}
-        onComplete={handleMovementComplete}
-        onSkip={handleSkipMovement}
-        phaseName={currentPhase.name}
-        progress={{
-          current: completedSteps + 1,
-          total: totalSteps
-        }}
-        externalTriggerStart={holdTriggerStart}
-      />
-
-      <ConfirmDialog
-        isOpen={showExitDialog}
-        title="Exit Workout?"
-        message="Your progress will not be saved. Are you sure you want to exit?"
-        confirmLabel="Exit"
-        cancelLabel="Continue"
-        onConfirm={confirmExit}
-        onCancel={() => setShowExitDialog(false)}
-      />
-
-      <VoiceSetupModal
-        isOpen={showVoiceSetup}
-        onContinue={() => setShowVoiceSetup(false)}
-      />
-    </motion.div>
+    </TapToSkipOverlay>
   )
 }

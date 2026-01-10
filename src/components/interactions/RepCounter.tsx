@@ -1,14 +1,11 @@
-import { useKeyboardInteraction } from '@/hooks'
 import { ProgressBar } from '@/components/base/ProgressBar'
 import { motion } from 'framer-motion'
-import { useState, useCallback } from 'react'
 
 interface RepCounterProps {
   currentReps: number
   targetRepsMin?: number
   targetRepsMax?: number
   isMaxReps?: boolean
-  onIncrement: () => void
   className?: string
 }
 
@@ -17,25 +14,8 @@ export function RepCounter({
   targetRepsMin,
   targetRepsMax,
   isMaxReps = false,
-  onIncrement,
   className = ''
 }: RepCounterProps) {
-  const [ripple, setRipple] = useState<{ x: number; y: number } | null>(null)
-
-  const handleTap = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    setRipple({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    })
-    setTimeout(() => setRipple(null), 500)
-    onIncrement()
-  }, [onIncrement])
-
-  const keyboardProps = useKeyboardInteraction({
-    onActivate: onIncrement
-  })
-
   const getTargetDisplay = () => {
     if (isMaxReps) {
       return 'Max reps'
@@ -62,41 +42,17 @@ export function RepCounter({
 
   return (
     <div
-      onClick={handleTap}
-      {...keyboardProps}
       className={`
         flex-1 flex flex-col items-center justify-center
-        cursor-pointer select-none touch-none
-        min-h-interaction
-        focus-interactive relative overflow-hidden
+        select-none
+        min-h-interaction relative
         ${className}
       `}
-      aria-label={`Current reps: ${currentReps}. Tap or press Enter to add one rep.`}
+      aria-label={`Current reps: ${currentReps}`}
+      aria-live="polite"
     >
-      {/* Ripple effect */}
-      {ripple && (
-        <motion.span
-          className="absolute rounded-full bg-earth-500/20 dark:bg-earth-400/20 pointer-events-none"
-          style={{
-            left: ripple.x,
-            top: ripple.y,
-            width: 20,
-            height: 20,
-            marginLeft: -10,
-            marginTop: -10
-          }}
-          initial={{ scale: 0, opacity: 0.5 }}
-          animate={{ scale: 10, opacity: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        />
-      )}
-
-      {/* Geometric container for rep number */}
-      <motion.div
-        className="w-48 h-48 rounded-[2rem] bg-cream-50 dark:bg-ink-800 shadow-[var(--shadow-md)] flex items-center justify-center mb-6"
-        whileTap={{ scale: 1.03 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-      >
+      {/* Display container for rep number - flat styling, no shadow */}
+      <div className="w-48 h-48 rounded-[2rem] bg-cream-50 dark:bg-ink-800 border-2 border-cream-200 dark:border-ink-700 flex items-center justify-center mb-6">
         <motion.span
           key={currentReps}
           initial={{ scale: 0.9, opacity: 0 }}
@@ -106,7 +62,7 @@ export function RepCounter({
         >
           {currentReps}
         </motion.span>
-      </motion.div>
+      </div>
 
       {/* Target display */}
       {targetDisplay && (
@@ -128,9 +84,9 @@ export function RepCounter({
         </div>
       )}
 
-      {/* Tap instruction */}
+      {/* Tap instruction - updated to reflect tap-anywhere */}
       <p className="text-body-sm text-ink-500 dark:text-cream-400 mt-6 animate-pulse-slow">
-        Tap to count
+        Tap anywhere to count
       </p>
     </div>
   )

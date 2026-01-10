@@ -62,25 +62,24 @@ describe('TimedHold', () => {
       expect(screen.getByText(/0:30/)).toBeInTheDocument()
     })
 
-    it('should show "TAP WHEN READY" prompt', () => {
+    it('should show "Tap anywhere when ready" hint', () => {
       render(<TimedHold targetSeconds={30} onComplete={vi.fn()} />)
 
-      expect(screen.getByText('TAP WHEN READY')).toBeInTheDocument()
+      expect(screen.getByText('Tap anywhere when ready')).toBeInTheDocument()
     })
 
-    it('should be clickable in ready phase', () => {
+    it('should show fallback button', () => {
       render(<TimedHold targetSeconds={30} onComplete={vi.fn()} />)
 
-      const element = screen.getByLabelText('Tap or press Enter to start timer')
-      expect(element).toHaveClass('cursor-pointer')
+      expect(screen.getByRole('button', { name: /or tap here/i })).toBeInTheDocument()
     })
   })
 
   describe('countdown phase', () => {
-    it('should transition to countdown on tap', () => {
+    it('should transition to countdown on fallback button click', () => {
       render(<TimedHold targetSeconds={30} countdownDuration={3} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -93,7 +92,7 @@ describe('TimedHold', () => {
     it('should show countdown number', () => {
       render(<TimedHold targetSeconds={30} countdownDuration={3} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -106,7 +105,7 @@ describe('TimedHold', () => {
     it('should countdown from specified duration', () => {
       render(<TimedHold targetSeconds={30} countdownDuration={3} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -125,7 +124,7 @@ describe('TimedHold', () => {
     it('should transition to active phase when countdown reaches 0', () => {
       render(<TimedHold targetSeconds={10} countdownDuration={2} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -145,7 +144,7 @@ describe('TimedHold', () => {
     it('should show "HOLD" text in active phase', () => {
       render(<TimedHold targetSeconds={10} countdownDuration={2} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -161,7 +160,7 @@ describe('TimedHold', () => {
     it('should show remaining hold time', () => {
       render(<TimedHold targetSeconds={10} countdownDuration={2} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -177,7 +176,7 @@ describe('TimedHold', () => {
     it('should countdown from targetSeconds', () => {
       render(<TimedHold targetSeconds={10} countdownDuration={2} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -204,7 +203,7 @@ describe('TimedHold', () => {
     it('should transition to complete phase after hold finishes', () => {
       render(<TimedHold targetSeconds={1} countdownDuration={2} onComplete={vi.fn()} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -227,7 +226,7 @@ describe('TimedHold', () => {
       const onComplete = vi.fn()
       render(<TimedHold targetSeconds={1} countdownDuration={2} onComplete={onComplete} />)
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -256,7 +255,7 @@ describe('TimedHold', () => {
         <TimedHold targetSeconds={30} countdownDuration={3} onComplete={onComplete} />
       )
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      const button = screen.getByRole('button', { name: /or tap here/i })
 
       act(() => {
         fireEvent.click(button)
@@ -276,27 +275,16 @@ describe('TimedHold', () => {
     })
   })
 
-  describe('keyboard interaction', () => {
-    it('should respond to Enter key in ready phase', () => {
-      render(<TimedHold targetSeconds={30} countdownDuration={3} onComplete={vi.fn()} />)
+  describe('external trigger', () => {
+    it('should start on externalTriggerStart', () => {
+      const { rerender } = render(
+        <TimedHold targetSeconds={30} countdownDuration={3} onComplete={vi.fn()} externalTriggerStart={false} />
+      )
 
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
-
-      act(() => {
-        fireEvent.keyDown(button, { key: 'Enter' })
-        vi.advanceTimersByTime(100)
-      })
-
-      expect(screen.getByText('3')).toBeInTheDocument()
-    })
-
-    it('should respond to Space key in ready phase', () => {
-      render(<TimedHold targetSeconds={30} countdownDuration={3} onComplete={vi.fn()} />)
-
-      const button = screen.getByRole('button', { name: 'TAP WHEN READY' })
+      expect(screen.getByText('Tap anywhere when ready')).toBeInTheDocument()
 
       act(() => {
-        fireEvent.keyDown(button, { key: ' ' })
+        rerender(<TimedHold targetSeconds={30} countdownDuration={3} onComplete={vi.fn()} externalTriggerStart={true} />)
         vi.advanceTimersByTime(100)
       })
 
@@ -304,12 +292,44 @@ describe('TimedHold', () => {
     })
   })
 
+  describe('phase change callback', () => {
+    it('should call onPhaseChange when phase changes', () => {
+      const onPhaseChange = vi.fn()
+      render(
+        <TimedHold targetSeconds={1} countdownDuration={2} onComplete={vi.fn()} onPhaseChange={onPhaseChange} />
+      )
+
+      // Initial phase callback
+      expect(onPhaseChange).toHaveBeenCalledWith('ready')
+
+      const button = screen.getByRole('button', { name: /or tap here/i })
+
+      act(() => {
+        fireEvent.click(button)
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(onPhaseChange).toHaveBeenCalledWith('countdown')
+
+      act(() => {
+        vi.advanceTimersByTime(2100)
+      })
+
+      expect(onPhaseChange).toHaveBeenCalledWith('active')
+
+      act(() => {
+        vi.advanceTimersByTime(1100)
+      })
+
+      expect(onPhaseChange).toHaveBeenCalledWith('complete')
+    })
+  })
+
   describe('accessibility', () => {
     it('should have aria-live region', () => {
-      render(<TimedHold targetSeconds={30} onComplete={vi.fn()} />)
+      const { container } = render(<TimedHold targetSeconds={30} onComplete={vi.fn()} />)
 
-      const element = screen.getByLabelText('Tap or press Enter to start timer')
-      expect(element).toHaveAttribute('aria-live', 'polite')
+      expect(container.querySelector('[aria-live="polite"]')).toBeInTheDocument()
     })
   })
 })
